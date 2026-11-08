@@ -133,8 +133,8 @@ cargo clippy --all-targets
 You need a recent Rust toolchain (edition 2024) and a browser with WebGL2.
 
 ```sh
-git clone https://github.com/vdTwer/design-showcase.git
-cd design-showcase
+git clone https://github.com/vdTwer/hub.git
+cd hub
 cargo run
 ```
 
