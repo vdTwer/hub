@@ -42,9 +42,13 @@ async fn every_piece_page_and_shader_is_served() {
     for piece in PIECES {
         let (status, body) = get(&format!("/p/{}", piece.slug)).await;
         assert_eq!(status, StatusCode::OK);
-        assert!(body.contains(piece.shader));
+        let Some(file) = piece.shader else {
+            assert!(!body.contains("data-shader"), "{}", piece.slug);
+            continue;
+        };
+        assert!(body.contains(file));
 
-        let (status, shader) = get(&format!("/static/shaders/{}", piece.shader)).await;
+        let (status, shader) = get(&format!("/static/shaders/{file}")).await;
         assert_eq!(status, StatusCode::OK);
         assert!(shader.starts_with("#version 300 es"));
     }
@@ -99,7 +103,7 @@ async fn calendar_shows_every_feature() {
         "class=\"event",
         "class=\"todo",
         "Sometime this week",
-        "data-palette=",
+        "tinted",
         "now-line",
         "is-now",
     ] {

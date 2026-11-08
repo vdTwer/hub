@@ -11,7 +11,7 @@
 <ul class="card-grid">
   {% for card in cards %}
   <li class="card">
-    <canvas data-shader="/static/shaders/{{ piece.shader }}"
+    <canvas data-shader="{{ piece.shader_url() }}"
             data-palette="{{ card.palette.join(",") }}"
             data-time-offset="{{ loop.index0 * 17 }}"></canvas>
     <div class="card-label">

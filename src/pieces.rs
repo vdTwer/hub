@@ -26,22 +26,30 @@ pub enum Layout {
     Fullscreen,
     /// One small canvas per card.
     Cards(&'static [Card]),
-    /// An app mockup: a calendar week, with the shader behind tinted days.
+    /// An app mockup: a calendar week, drawn without any shader.
     Calendar(&'static Week),
 }
 
-/// One showcase piece: a fragment shader, a layout and a short caption.
+/// One showcase piece: a layout, a short caption and usually a shader.
 #[derive(Debug, Clone, Copy)]
 pub struct Piece {
     pub slug: &'static str,
     pub title: &'static str,
     pub blurb: &'static str,
-    /// File name inside `static/shaders/`.
-    pub shader: &'static str,
+    /// File name inside `static/shaders/`, if the piece runs one.
+    pub shader: Option<&'static str>,
     pub layout: Layout,
 }
 
 impl Piece {
+    /// The URL of the piece's shader, or an empty string without one.
+    #[must_use]
+    pub fn shader_url(&self) -> String {
+        self.shader
+            .map(|s| format!("/static/shaders/{s}"))
+            .unwrap_or_default()
+    }
+
     /// The piece's cards, empty unless it is a card piece.
     #[must_use]
     pub const fn cards(&self) -> &'static [Card] {
@@ -58,7 +66,7 @@ pub const PIECES: &[Piece] = &[
         title: "Fluid, on film",
         blurb: "Domain-warped gradients that drift like ink in water, \
                 developed onto a worn reel of 35mm stock.",
-        shader: "fluid-grain.frag",
+        shader: Some("fluid-grain.frag"),
         layout: Layout::Fullscreen,
     },
     Piece {
@@ -66,15 +74,15 @@ pub const PIECES: &[Piece] = &[
         title: "Colorways",
         blurb: "The same fluid on film, poured six times, \
                 each card around a different primary color.",
-        shader: "fluid-grain.frag",
+        shader: Some("fluid-grain.frag"),
         layout: Layout::Cards(&COLORWAYS),
     },
     Piece {
         slug: "calendar",
         title: "A week, on paper",
         blurb: "A calendar mockup: crisp events and todos on a paper week, \
-                with unusual days washed in grainy fluid color.",
-        shader: "fluid-grain.frag",
+                with unusual days set apart by a quiet tint.",
+        shader: None,
         layout: Layout::Calendar(&WEEK),
     },
 ];

@@ -2,7 +2,7 @@
 {% block title %}{{ piece.title }}{% endblock %}
 {% block body_class %}stage{% endblock %}
 {% block content %}
-<canvas id="stage" data-shader="/static/shaders/{{ piece.shader }}"></canvas>
+<canvas id="stage" data-shader="{{ piece.shader_url() }}"></canvas>
 <footer class="caption">
   <a class="label" href="/">&larr; Showcase</a>
   <h1>{{ piece.title }}</h1>
