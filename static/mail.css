@@ -6,58 +6,6 @@
    place with color, headed by a still print of grainy fluid in its hue, with
    its toolbar in glass on top. Read messages fold, new ones open. */
 
-.mail-page { --gutter: 20px; --bar: 56px; }
-.mail-app {
-  display: grid;
-  grid-template-columns: 216px minmax(340px, 384px) minmax(0, 1fr);
-  height: 100vh;
-  min-height: 560px;
-}
-.mail-app > * { min-width: 0; min-height: 0; }
-
-/* sidebar: a slightly deeper paper, like a macOS source list */
-.rail { overflow: auto; padding: 18px 10px 24px; background: var(--sidebar); box-shadow: inset -1px 0 0 var(--hair); }
-.section { margin: 18px 10px 6px; font: var(--t-caption); color: var(--ink-3); }
-.section:first-child { margin-top: 0; }
-.nav { list-style: none; padding: 0; margin: 0; display: grid; gap: 1px; }
-.nav li {
-  display: grid; grid-template-columns: 20px minmax(0, 1fr) auto; align-items: center; gap: 8px;
-  height: 30px; padding: 0 10px 0 8px; border-radius: var(--radius);
-  font: 500 14.5px/1 var(--sans); color: var(--ink); cursor: default;
-  transition: background-color .12s;
-}
-.nav li:hover { background: var(--fill-1); }
-.nav li.active { background: var(--fill-3); font-weight: 600; }
-.nav .sym { color: var(--ink-2); justify-self: center; }
-.nav li.active .sym { color: var(--ink); }
-.nav .name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.nav .n { font: 400 13px/1 var(--sans); color: var(--ink-3); }
-.nav li.active .n { color: var(--ink-2); font-weight: 600; }
-/* tags as dots, after Finder: a filled dot for a category, a ring for the rest */
-.tags .dot { justify-self: center; width: 10px; height: 10px; border-radius: 50%; background: color-mix(in srgb, var(--c) 62%, var(--fill)); }
-.tags .plain .dot { background: none; box-shadow: inset 0 0 0 1.5px var(--ink-3); }
-
-/* list */
-.list { display: flex; flex-direction: column; box-shadow: inset -1px 0 0 var(--hair); }
-.list-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: var(--bar); padding: 14px 12px 0 var(--gutter); }
-.titles h1 { font: var(--t-title-3); letter-spacing: -0.005em; }
-.titles p { font: var(--t-subhead); color: var(--ink-3); }
-.list-tools { display: grid; gap: 10px; padding: 12px var(--gutter) 12px; box-shadow: inset 0 -1px 0 var(--hair); }
-.search { display: flex; align-items: center; gap: 6px; height: 32px; padding: 0 10px 0 8px; border-radius: var(--radius); background: var(--fill-2); color: var(--ink-3); }
-.search .sym { width: 16px; height: 16px; }
-.search input { flex: 1; min-width: 0; border: 0; background: none; font: var(--t-callout); color: var(--ink); outline: none; }
-.search input::placeholder { color: var(--ink-3); }
-.search:focus-within { box-shadow: 0 0 0 3px var(--ring); background: var(--surface); }
-.list-tools .seg { display: grid; grid-template-columns: repeat(3, 1fr); }
-
-.list-scroll { flex: 1; overflow: auto; overscroll-behavior: contain; padding: 0 10px 24px; }
-.group {
-  position: sticky; top: 0; z-index: 2; margin: 0 -10px; padding: 14px calc(var(--gutter)) 6px;
-  background: color-mix(in srgb, var(--paper) 88%, transparent);
-  -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
-  font: var(--t-caption); color: var(--ink-3);
-}
-.rows { list-style: none; padding: 0; margin: 0; }
 .row {
   position: relative;
   display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 12px; row-gap: 2px;
@@ -84,21 +32,13 @@
 .row.open { background: var(--surface); box-shadow: var(--e-2); }
 .row.open::before, .row.open + .row::before { display: none; }
 
-.tag { display: inline-flex; align-items: center; height: 19px; padding: 0 6px; border-radius: var(--r-sm); background: var(--fill); color: var(--c); font: var(--t-caption); }
 .clip { display: inline-flex; align-items: center; gap: 2px; margin-left: 2px; font: var(--t-subhead); color: var(--ink-3); }
 .clip .sym { width: 14px; height: 14px; }
 .owe { display: inline-flex; align-items: center; gap: 5px; height: 19px; padding: 0 6px; border-radius: var(--r-sm); background: var(--surface); box-shadow: inset 0 0 0 1px var(--line); font: var(--t-caption); color: var(--ink); }
 .owe .check { width: 9px; height: 9px; border-radius: 2px; }
 
-/* reader */
+/* reader: the thread under its print (see split.css) */
 .reader { position: relative; overflow: auto; overscroll-behavior: contain; }
-.reader-head { position: relative; isolation: isolate; display: grid; gap: 28px; padding: 12px 32px 44px; }
-.reader-head .print {
-  position: absolute; inset: 0; z-index: -1;
-  -webkit-mask-image: linear-gradient(to bottom, #000 70%, transparent);
-  mask-image: linear-gradient(to bottom, #000 70%, transparent);
-}
-.reader-bar { display: flex; justify-content: space-between; gap: 10px; min-height: calc(var(--bar) - 12px); align-items: center; }
 .reader-title { max-width: 720px; margin-top: 28px; }
 .reader-title h2 { font: var(--t-title); letter-spacing: -0.012em; text-wrap: balance; }
 .who-line { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 12px; font: var(--t-subhead); }
@@ -205,25 +145,14 @@
 .saved { flex: 1; font: var(--t-subhead); color: var(--ink-3); }
 
 @supports (corner-shape: squircle) {
-  .nav li, .search, .row, .tag, .owe, .folded, .stack button, .stack::before, .stack::after, .message, .files li, .linked a, .composer, .add-tag { corner-shape: squircle; }
+  .row, .owe, .folded, .stack button, .stack::before, .stack::after, .message, .files li, .linked a, .composer, .add-tag { corner-shape: squircle; }
 }
 
-@media (max-width: 1180px) {
-  .mail-app { grid-template-columns: minmax(320px, 360px) minmax(0, 1fr); }
-  .rail { display: none; }
-}
 @media (max-width: 760px) {
-  .mail-page { --gutter: 16px; }
-  .mail-app { display: block; height: auto; }
-  .list { box-shadow: none; }
-  .list-scroll { overflow: visible; }
-  .reader-head { padding: 12px 16px 36px; }
   .reader-body { padding: 0 16px 40px; }
   .folded { grid-template-columns: auto minmax(0, 1fr) auto; }
   .folded .gist { display: none; }
   .message { padding: 18px 18px 22px; }
   .actions { display: none; }
   .message header { grid-template-columns: auto minmax(0, 1fr) auto; }
-  .icon-btn { width: 44px; height: 44px; }
-  .glass .icon-btn { width: 40px; height: 40px; }
 }

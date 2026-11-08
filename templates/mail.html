@@ -1,8 +1,9 @@
 {% extends "base.html" %}
 {% block title %}{{ piece.title }}{% endblock %}
-{% block body_class %}paper mail-page{% endblock %}
+{% block body_class %}paper split-page mail-page{% endblock %}
 {% block content %}
 <link rel="stylesheet" href="/static/paper.css">
+<link rel="stylesheet" href="/static/split.css">
 <link rel="stylesheet" href="/static/mail.css">
 <svg width="0" height="0" style="position: absolute" aria-hidden="true">
   <symbol id="tray" viewBox="0 0 20 20"><path d="M3 11.5h4.2l1.3 2.2h3l1.3-2.2H17M3 11.5 5.2 4.5h9.6l2.2 7v4H3z"/></symbol>
@@ -23,7 +24,7 @@
   <symbol id="cal" viewBox="0 0 20 20"><path d="M3.5 5h13v11.5h-13zM3.5 8.5h13M7 3v3M13 3v3"/></symbol>
   <symbol id="chev" viewBox="0 0 20 20"><path d="m8 5 5 5-5 5"/></symbol>
 </svg>
-<div class="mail-app">
+<div class="split mail-app">
 
   <aside class="rail">
     <nav aria-label="Mailboxes">
@@ -80,12 +81,12 @@
   </section>
 
   <article class="reader {{ mail.thread.category.class() }}" aria-label="{{ mail.thread.subject }}">
-    <header class="reader-head">
+    <header class="print-head">
       <canvas class="print" aria-hidden="true" data-still
               data-shader="{{ piece.shader_url() }}"
               data-palette="{{ mail.thread.palette_attr() }}"
               data-time-offset="7"></canvas>
-      <div class="reader-bar">
+      <div class="print-bar">
         <div class="glass toolbar-group">
           <button type="button" class="icon-btn" title="Reply" aria-label="Reply"><svg class="sym"><use href="#reply"/></svg></button>
           <button type="button" class="icon-btn" title="Reply all" aria-label="Reply all"><svg class="sym"><use href="#reply-all"/></svg></button>
