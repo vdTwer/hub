@@ -1,7 +1,15 @@
-/* Paper: the shared language of the app mockups. Hue means category (work,
-   personal, travel), red means now, and a still print of grainy fluid color
-   marks what differs. Shapes are small squircles with a solid fill and a soft
-   shadow; outlined shapes are things to do rather than things that are.
+/* Paper: the shared design system of the app mockups.
+
+   Meaning: hue is category (work, personal, travel), red is now, and a still
+   print of grainy fluid color marks what differs. Outlined shapes are things
+   to do rather than things that are.
+
+   System, after Apple's Human Interface Guidelines with a nod to Material
+   and Fluent: one type scale, a 4-point spacing grid, label colors by
+   emphasis rather than by hex, fills and separators as tints of ink, three
+   elevations, concentric corners, glass for controls that float over the
+   print, a graphite accent so that hue stays free to mean category, and
+   state layers for hover and press.
 
    Type: Source Sans 3, a humanist sans with open, calligraphic forms. Its
    figures are tabular by default, so times line up without a mono face. */
@@ -10,53 +18,141 @@
 
 .paper {
   --sans: "Source Sans 3", "Segoe UI", "Helvetica Neue", sans-serif;
+
+  /* surfaces */
   --paper: #fbfaf6;
+  --sidebar: #f3f1ea;
   --surface: #ffffff;
+
+  /* labels, by emphasis (contrast on paper: 18.6, 7.3, 4.0:1) */
   --ink: #121216;
   --ink-2: #55555d;
   --ink-3: #7b7b84;
-  --hair: rgba(18, 18, 22, 0.08);
-  --line: rgba(18, 18, 22, 0.14);
+  --reading: #26262c;
+
+  /* fills and separators: tints of ink, so they sit on any surface */
+  --fill-1: rgba(18, 18, 22, .04);
+  --fill-2: rgba(18, 18, 22, .065);
+  --fill-3: rgba(18, 18, 22, .09);
+  --hair: rgba(18, 18, 22, .08);
+  --line: rgba(18, 18, 22, .14);
+
+  /* accent: graphite, as macOS offers it, so hue only ever means category */
+  --accent: #1d1d22;
+  --on-accent: #fbfaf6;
+  --ring: rgba(27, 38, 118, .38);
   --now: #df2a22;
+
   /* Cobalt, apricot and lagoon, deep enough to read at a glance; text is a
      dark shade of the same hue (all pairs above 7:1). */
   --work: #d5dbfb;     --work-ink: #1b2676;
   --personal: #f8d5c2; --personal-ink: #6b290b;
   --travel: #c5e7e3;   --travel-ink: #08474d;
+
+  /* type scale: size and leading per role */
+  --t-large: 600 32px/1.1 var(--sans);
+  --t-title: 600 28px/1.15 var(--sans);
+  --t-title-3: 600 19px/1.25 var(--sans);
+  --t-headline: 600 15px/1.35 var(--sans);
+  --t-body: 400 15px/1.45 var(--sans);
+  --t-reading: 400 16.5px/1.6 var(--sans);
+  --t-callout: 400 14px/1.4 var(--sans);
+  --t-subhead: 400 13px/1.35 var(--sans);
+  --t-caption: 600 12px/1.25 var(--sans);
+
+  /* corners nest: an inner radius is the outer one minus the padding */
+  --r-sm: 3px;
   --radius: 4px;
+  --r-lg: 8px;
+
+  /* elevation */
+  --e-1: 0 0 0 1px var(--hair), 0 1px 2px rgba(18, 18, 22, .05);
+  --e-2: 0 0 0 1px var(--hair), 0 1px 2px rgba(18, 18, 22, .05), 0 10px 24px -16px rgba(18, 18, 22, .32);
+  --e-3: 0 0 0 1px var(--hair), 0 2px 4px rgba(18, 18, 22, .06), 0 18px 40px -18px rgba(18, 18, 22, .4);
+
   color-scheme: light;
   background: var(--paper);
   color: var(--ink);
-  font: 400 15px/1.4 var(--sans);
+  font: var(--t-body);
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 .work { --fill: var(--work); --c: var(--work-ink); }
 .personal { --fill: var(--personal); --c: var(--personal-ink); }
 .travel { --fill: var(--travel); --c: var(--travel-ink); }
+.plain { --fill: var(--fill-2); --c: var(--ink-2); }
 
 :where(.paper) button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+:where(.paper) svg { flex: none; }
 
-/* segmented controls (the reset above has no weight, so any class wins) */
-.seg { display: inline-flex; padding: 2px; gap: 2px; border-radius: 6px; background: rgba(18, 18, 22, 0.06); }
-.seg button { height: 28px; padding: 0 12px; border-radius: var(--radius); font-size: 14px; font-weight: 500; color: var(--ink-2); }
+/* symbols: drawn like SF Symbols, a 1.5 stroke on a 20-point grid */
+.sym { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+
+/* segmented control (the reset above has no weight, so any class wins) */
+.seg { display: inline-flex; padding: 2px; gap: 2px; border-radius: 7px; background: var(--fill-2); }
+.seg button { height: 26px; padding: 0 12px; border-radius: 5px; font: 500 13.5px/1 var(--sans); color: var(--ink-2); transition: background-color .12s, color .12s; }
 .seg button:hover { color: var(--ink); }
 .seg button.active { color: var(--ink); background: var(--surface); box-shadow: 0 1px 2px rgba(0, 0, 0, .1), 0 0 0 .5px rgba(0, 0, 0, .08); }
 
+/* toolbar buttons: a symbol in a 32-point square, with a state layer */
+.icon-btn {
+  display: inline-grid; place-items: center; width: 32px; height: 32px;
+  border-radius: 7px; color: var(--ink-2);
+  transition: background-color .12s, color .12s;
+}
+.icon-btn:hover { background: var(--fill-2); color: var(--ink); }
+.icon-btn:active { background: var(--fill-3); }
+.toolbar-group { display: inline-flex; gap: 2px; }
+
+/* glass: controls that float over the print, after Apple's Liquid Glass */
+.glass {
+  background: color-mix(in srgb, var(--surface) 52%, transparent);
+  -webkit-backdrop-filter: blur(18px) saturate(1.6);
+  backdrop-filter: blur(18px) saturate(1.6);
+  box-shadow:
+    inset 0 .5px 0 rgba(255, 255, 255, .85),
+    inset 0 0 0 .5px rgba(255, 255, 255, .5),
+    0 0 0 .5px rgba(18, 18, 22, .08),
+    0 6px 18px -10px rgba(18, 18, 22, .35);
+}
+.glass.toolbar-group { padding: 3px; border-radius: 10px; }
+.glass .icon-btn { width: 32px; height: 30px; color: var(--c, var(--ink)); }
+.glass .icon-btn:hover { background: color-mix(in srgb, var(--surface) 70%, transparent); }
+
+/* buttons with a label */
+.btn { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 14px; border-radius: 7px; font: 600 14px/1 var(--sans); }
+.btn.prominent { background: var(--accent); color: var(--on-accent); box-shadow: 0 1px 2px rgba(18, 18, 22, .2); }
+.btn.prominent:hover { background: color-mix(in srgb, var(--accent) 88%, white); }
+
+/* contact monogram: a neutral gradient disc, as on Apple platforms */
+.mono {
+  display: inline-grid; place-items: center; width: 32px; height: 32px; border-radius: 50%;
+  background: linear-gradient(#a9a9b1, #8c8c95); color: #fff;
+  font: 600 12.5px/1 var(--sans); letter-spacing: .02em;
+}
+.mono.mine, .mine > .mono { background: linear-gradient(color-mix(in srgb, var(--c) 62%, white), color-mix(in srgb, var(--c) 82%, white)); }
+
 /* outlined checkbox, for things to do */
-.check { flex: none; width: 12px; height: 12px; border-radius: 3px; box-shadow: inset 0 0 0 1.5px var(--ink-3); }
+.check { flex: none; width: 12px; height: 12px; border-radius: var(--r-sm); box-shadow: inset 0 0 0 1.5px var(--ink-3); }
 .done .check { background: var(--ink-3) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M3.2 6.2l1.8 1.8 3.8-4' fill='none' stroke='%23fff' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 10px no-repeat; box-shadow: none; }
 
 /* a still print of grainy fluid color */
 canvas.print { display: block; width: 100%; height: 100%; pointer-events: none; }
 
-/* keyboard focus */
-.paper :focus-visible { outline: 2px solid var(--work-ink); outline-offset: 2px; border-radius: var(--radius); }
+/* keyboard focus: a soft halo, as on macOS */
+.paper :focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); border-radius: var(--radius); }
 
 /* Squircles: CSS Borders 4 corner-shape, in Chromium since 139. A squircle
    needs a slightly larger radius to look as soft as a circular arc;
    elsewhere the corners stay round. */
 @supports (corner-shape: squircle) {
-  .paper { --radius: 6px; }
-  .seg, .seg button, .check { corner-shape: squircle; }
-  .seg { border-radius: 8px; }
+  .paper { --radius: 6px; --r-sm: 4px; --r-lg: 11px; }
+  .seg, .seg button, .check, .icon-btn, .glass.toolbar-group, .btn { corner-shape: squircle; }
+  .seg { border-radius: 9px; }
+  .seg button, .icon-btn, .btn { border-radius: 8px; }
+  .glass.toolbar-group { border-radius: 13px; }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .glass { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; }
 }
