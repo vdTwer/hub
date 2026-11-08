@@ -58,3 +58,30 @@ async fn stage_script_is_served() {
     let (status, _) = get("/static/js/stage.js").await;
     assert_eq!(status, StatusCode::OK);
 }
+
+#[tokio::test]
+async fn card_pieces_render_one_canvas_per_card() {
+    for piece in PIECES.iter().filter(|p| !p.cards.is_empty()) {
+        let (status, body) = get(&format!("/p/{}", piece.slug)).await;
+        assert_eq!(status, StatusCode::OK);
+        assert_eq!(body.matches("data-palette=").count(), piece.cards.len());
+        for card in piece.cards {
+            assert!(body.contains(card.name), "{}", card.name);
+            assert!(body.contains(&card.palette.join(",")), "{}", card.name);
+        }
+    }
+}
+
+#[test]
+fn palettes_are_five_hex_colors() {
+    for card in PIECES.iter().flat_map(|p| p.cards) {
+        for color in card.palette {
+            let hex = color.strip_prefix('#').unwrap_or_default();
+            assert!(
+                hex.len() == 6 && hex.chars().all(|c| c.is_ascii_hexdigit()),
+                "{}: {color}",
+                card.name
+            );
+        }
+    }
+}

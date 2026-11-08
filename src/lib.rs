@@ -25,6 +25,12 @@ struct PiecePage {
     piece: &'static Piece,
 }
 
+#[derive(Template)]
+#[template(path = "cards.html")]
+struct CardsPage {
+    piece: &'static Piece,
+}
+
 fn render(template: &impl Template) -> Response {
     match template.render() {
         Ok(html) => Html(html).into_response(),
@@ -42,7 +48,13 @@ async fn index() -> Response {
 async fn piece(Path(slug): Path<String>) -> Response {
     pieces::find(&slug).map_or_else(
         || (StatusCode::NOT_FOUND, "no such piece").into_response(),
-        |piece| render(&PiecePage { piece }),
+        |piece| {
+            if piece.cards.is_empty() {
+                render(&PiecePage { piece })
+            } else {
+                render(&CardsPage { piece })
+            }
+        },
     )
 }
 

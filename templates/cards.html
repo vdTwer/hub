@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}{{ piece.title }}{% endblock %}
+{% block body_class %}cards{% endblock %}
+{% block content %}
+<header class="cards-head">
+  <a class="label" href="/">&larr; Showcase</a>
+  <h1>{{ piece.title }}</h1>
+  <p>{{ piece.blurb }}</p>
+  <button id="film" class="label" type="button" aria-pressed="true">Film: on</button>
+</header>
+<ul class="card-grid">
+  {% for card in piece.cards %}
+  <li class="card">
+    <canvas data-shader="/static/shaders/{{ piece.shader }}"
+            data-palette="{{ card.palette.join(",") }}"
+            data-time-offset="{{ loop.index0 * 17 }}"></canvas>
+    <div class="card-label">
+      <span class="swatch" style="background: {{ card.primary() }}"></span>
+      <span class="name">{{ card.name }}</span>
+      <span class="label">{{ card.primary() }}</span>
+    </div>
+  </li>
+  {% endfor %}
+</ul>
+<script src="/static/js/stage.js" defer></script>
+{% endblock %}
