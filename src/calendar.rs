@@ -8,27 +8,32 @@ use std::borrow::Borrow;
 pub const DAY_START: u16 = 7 * 60;
 pub const DAY_END: u16 = 22 * 60;
 
-/// Event colors, borrowed from the Colorways cards.
+/// Which calendar an item belongs to. Color encodes this and nothing else.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Tone {
-    Cobalt,
-    Vermilion,
-    Emerald,
-    Saffron,
-    Magenta,
-    Lagoon,
+pub enum Category {
+    Work,
+    Personal,
+    Travel,
 }
 
-impl Tone {
+impl Category {
+    pub const ALL: [Self; 3] = [Self::Work, Self::Personal, Self::Travel];
+
     #[must_use]
     pub const fn class(self) -> &'static str {
         match self {
-            Self::Cobalt => "cobalt",
-            Self::Vermilion => "vermilion",
-            Self::Emerald => "emerald",
-            Self::Saffron => "saffron",
-            Self::Magenta => "magenta",
-            Self::Lagoon => "lagoon",
+            Self::Work => "work",
+            Self::Personal => "personal",
+            Self::Travel => "travel",
+        }
+    }
+
+    #[must_use]
+    pub const fn label(self) -> &'static str {
+        match self {
+            Self::Work => "Work",
+            Self::Personal => "Personal",
+            Self::Travel => "Travel",
         }
     }
 }
@@ -47,7 +52,7 @@ pub struct Event {
     pub end: u16,
     pub title: &'static str,
     pub place: &'static str,
-    pub tone: Tone,
+    pub category: Category,
 }
 
 /// A todo: a point in time to get something done by, not a block of time.
@@ -84,7 +89,7 @@ pub struct AllDay {
     pub first: usize,
     pub last: usize,
     pub title: &'static str,
-    pub tone: Tone,
+    pub category: Category,
 }
 
 /// Something that should happen this week, on no particular day.
@@ -93,7 +98,7 @@ pub struct Someday {
     pub title: &'static str,
     pub detail: &'static str,
     pub todo: bool,
-    pub tone: Tone,
+    pub category: Category,
 }
 
 /// A run of days that are different from the rest, drawn as a tinted
@@ -162,12 +167,13 @@ pub fn clock(minutes: u16) -> String {
     format!("{}:{:02}", minutes / 60, minutes % 60)
 }
 
-/// An event with its column inside a group of overlapping events.
+/// An event and how deep it sits in a cascade of overlapping events.
+/// Depth 0 is flush left; each level is indented a little and drawn on top,
+/// so overlapping events overlap, as in Apple Calendar.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Placed {
     pub event: Event,
-    pub column: u16,
-    pub columns: u16,
+    pub depth: u16,
 }
 
 impl Placed {
@@ -182,65 +188,36 @@ impl Placed {
     }
 
     #[must_use]
-    pub fn left(&self) -> f32 {
-        100.0 * f32::from(self.column) / f32::from(self.columns)
-    }
-
-    #[must_use]
-    pub fn width(&self) -> f32 {
-        100.0 / f32::from(self.columns)
-    }
-
-    #[must_use]
     pub fn span(&self) -> String {
         format!("{}–{}", clock(self.event.start), clock(self.event.end))
     }
+
+    /// Too short for two lines of text; title and time share one.
+    #[must_use]
+    pub const fn short(&self) -> bool {
+        self.event.end - self.event.start <= 45
+    }
 }
 
-/// Places one day's events. Events that overlap, directly or through a chain
-/// of others, form a cluster that shares its width equally; each event takes
-/// the leftmost column that is free when it starts.
+/// Places one day's events in drawing order. An event that starts while
+/// others are still running nests one level deeper than the deepest of them.
 #[must_use]
 pub fn place_day(events: &[Event]) -> Vec<Placed> {
     let mut sorted = events.to_vec();
     sorted.sort_by_key(|e| (e.start, std::cmp::Reverse(e.end)));
-
-    let mut placed = Vec::with_capacity(sorted.len());
-    let mut cluster_start = 0;
-    let mut cluster_end = 0;
-    let mut column_ends: Vec<u16> = Vec::new();
-
-    let close = |placed: &mut Vec<Placed>, from: usize, width: usize| {
-        let columns = u16::try_from(width).unwrap_or(u16::MAX);
-        for p in &mut placed[from..] {
-            p.columns = columns;
-        }
-    };
-
-    for event in sorted {
-        if event.start >= cluster_end && !column_ends.is_empty() {
-            close(&mut placed, cluster_start, column_ends.len());
-            cluster_start = placed.len();
-            column_ends.clear();
-        }
-        let column = column_ends
-            .iter()
-            .position(|&end| end <= event.start)
-            .unwrap_or(column_ends.len());
-        if column == column_ends.len() {
-            column_ends.push(event.end);
-        } else {
-            column_ends[column] = event.end;
-        }
-        cluster_end = cluster_end.max(event.end);
-        placed.push(Placed {
-            event,
-            column: u16::try_from(column).unwrap_or(u16::MAX),
-            columns: 1,
-        });
-    }
-    close(&mut placed, cluster_start, column_ends.len());
-    placed
+    sorted
+        .iter()
+        .enumerate()
+        .fold(Vec::new(), |mut placed, (i, &event)| {
+            let depth = placed[..i]
+                .iter()
+                .filter(|p: &&Placed| p.event.end > event.start)
+                .map(|p| p.depth + 1)
+                .max()
+                .unwrap_or(0);
+            placed.push(Placed { event, depth });
+            placed
+        })
 }
 
 /// An all-day item with the lane (row) it sits in.
@@ -387,6 +364,11 @@ impl Week {
     }
 
     #[must_use]
+    pub const fn categories(&self) -> [Category; 3] {
+        Category::ALL
+    }
+
+    #[must_use]
     pub const fn open_somedays(&self) -> usize {
         self.someday.len()
     }
@@ -402,7 +384,7 @@ const fn event(
     end: u16,
     title: &'static str,
     place: &'static str,
-    tone: Tone,
+    category: Category,
 ) -> Event {
     Event {
         day,
@@ -410,7 +392,7 @@ const fn event(
         end,
         title,
         place,
-        tone,
+        category,
     }
 }
 
@@ -458,14 +440,14 @@ pub const WEEK: Week = Week {
     today: 2,
     now: at(14, 20),
     events: &[
-        event(0, at(9, 0), at(9, 30), "Standup", "Studio", Tone::Cobalt),
+        event(0, at(9, 0), at(9, 30), "Standup", "Studio", Category::Work),
         event(
             0,
             at(10, 0),
             at(11, 30),
             "Deep work: shaders",
             "",
-            Tone::Emerald,
+            Category::Work,
         ),
         event(
             0,
@@ -473,7 +455,7 @@ pub const WEEK: Week = Week {
             at(13, 30),
             "Lunch with Mara",
             "Café Pigalle",
-            Tone::Saffron,
+            Category::Personal,
         ),
         event(
             0,
@@ -481,16 +463,16 @@ pub const WEEK: Week = Week {
             at(16, 0),
             "1:1 with Jonas",
             "Room 2",
-            Tone::Magenta,
+            Category::Work,
         ),
-        event(1, at(9, 0), at(9, 30), "Standup", "Studio", Tone::Cobalt),
+        event(1, at(9, 0), at(9, 30), "Standup", "Studio", Category::Work),
         event(
             1,
             at(10, 0),
             at(11, 0),
             "Design review",
             "Room 1",
-            Tone::Cobalt,
+            Category::Work,
         ),
         event(
             1,
@@ -498,7 +480,7 @@ pub const WEEK: Week = Week {
             at(12, 0),
             "Interview: frontend",
             "Video call",
-            Tone::Vermilion,
+            Category::Work,
         ),
         event(
             1,
@@ -506,7 +488,7 @@ pub const WEEK: Week = Week {
             at(11, 45),
             "Vendor call",
             "Phone",
-            Tone::Lagoon,
+            Category::Work,
         ),
         event(
             1,
@@ -514,7 +496,7 @@ pub const WEEK: Week = Week {
             at(15, 30),
             "Sprint planning",
             "Studio",
-            Tone::Magenta,
+            Category::Work,
         ),
         event(
             1,
@@ -522,16 +504,24 @@ pub const WEEK: Week = Week {
             at(20, 0),
             "Climbing",
             "Boulderhalle",
-            Tone::Emerald,
+            Category::Personal,
         ),
-        event(2, at(9, 0), at(9, 30), "Standup", "Studio", Tone::Cobalt),
+        event(2, at(9, 0), at(9, 30), "Standup", "Studio", Category::Work),
         event(
             2,
             at(10, 30),
             at(12, 0),
             "Typeface workshop",
             "Room 1",
-            Tone::Saffron,
+            Category::Work,
+        ),
+        event(
+            2,
+            at(11, 30),
+            at(12, 30),
+            "Call with the bank",
+            "Phone",
+            Category::Personal,
         ),
         event(
             2,
@@ -539,7 +529,7 @@ pub const WEEK: Week = Week {
             at(15, 0),
             "Prototype: Colorways",
             "Studio",
-            Tone::Vermilion,
+            Category::Work,
         ),
         event(
             2,
@@ -547,7 +537,7 @@ pub const WEEK: Week = Week {
             at(15, 45),
             "Quick sync with Ava",
             "Desk",
-            Tone::Lagoon,
+            Category::Work,
         ),
         event(
             2,
@@ -555,7 +545,7 @@ pub const WEEK: Week = Week {
             at(16, 30),
             "Dentist",
             "Dr. Weiss",
-            Tone::Magenta,
+            Category::Personal,
         ),
         event(
             3,
@@ -563,7 +553,7 @@ pub const WEEK: Week = Week {
             at(11, 30),
             "Train to Berlin",
             "ICE 1033",
-            Tone::Lagoon,
+            Category::Travel,
         ),
         event(
             3,
@@ -571,7 +561,7 @@ pub const WEEK: Week = Week {
             at(17, 30),
             "Off-site workshop",
             "Factory Berlin",
-            Tone::Cobalt,
+            Category::Work,
         ),
         event(
             3,
@@ -579,7 +569,7 @@ pub const WEEK: Week = Week {
             at(21, 30),
             "Team dinner",
             "Lode & Stijn",
-            Tone::Saffron,
+            Category::Work,
         ),
         event(
             4,
@@ -587,7 +577,7 @@ pub const WEEK: Week = Week {
             at(12, 0),
             "Off-site, day two",
             "Factory Berlin",
-            Tone::Cobalt,
+            Category::Work,
         ),
         event(
             4,
@@ -595,7 +585,7 @@ pub const WEEK: Week = Week {
             at(19, 0),
             "Train home",
             "ICE 1036",
-            Tone::Lagoon,
+            Category::Travel,
         ),
         event(
             5,
@@ -603,7 +593,7 @@ pub const WEEK: Week = Week {
             at(12, 0),
             "Farmers market",
             "Marktplatz",
-            Tone::Emerald,
+            Category::Personal,
         ),
         event(
             5,
@@ -611,9 +601,16 @@ pub const WEEK: Week = Week {
             at(21, 30),
             "Lena's birthday dinner",
             "At Lena's",
-            Tone::Vermilion,
+            Category::Personal,
         ),
-        event(6, at(11, 0), at(13, 0), "Brunch", "Home", Tone::Saffron),
+        event(
+            6,
+            at(11, 0),
+            at(13, 0),
+            "Brunch",
+            "Home",
+            Category::Personal,
+        ),
     ],
     todos: &[
         todo(0, at(17, 0), "Send November invoice", true),
@@ -628,31 +625,31 @@ pub const WEEK: Week = Week {
             first: 0,
             last: 0,
             title: "Q4 kickoff",
-            tone: Tone::Cobalt,
+            category: Category::Work,
         },
         AllDay {
             first: 1,
             last: 1,
             title: "Release 0.3",
-            tone: Tone::Emerald,
+            category: Category::Work,
         },
         AllDay {
             first: 3,
             last: 4,
             title: "Off-site, Berlin",
-            tone: Tone::Lagoon,
+            category: Category::Travel,
         },
         AllDay {
             first: 2,
             last: 5,
             title: "Mom visiting",
-            tone: Tone::Magenta,
+            category: Category::Personal,
         },
         AllDay {
             first: 5,
             last: 5,
             title: "Lena's birthday",
-            tone: Tone::Vermilion,
+            category: Category::Personal,
         },
     ],
     someday: &[
@@ -660,39 +657,39 @@ pub const WEEK: Week = Week {
             title: "Call grandma",
             detail: "about 30 min",
             todo: false,
-            tone: Tone::Saffron,
+            category: Category::Personal,
         },
         Someday {
             title: "Renew passport",
             detail: "before the 20th",
             todo: true,
-            tone: Tone::Cobalt,
+            category: Category::Personal,
         },
         Someday {
             title: "Write the showcase README",
             detail: "1 h of focus",
             todo: false,
-            tone: Tone::Emerald,
+            category: Category::Work,
         },
         Someday {
             title: "Get a haircut",
             detail: "",
             todo: true,
-            tone: Tone::Magenta,
+            category: Category::Personal,
         },
     ],
     tints: &[
         Tint {
             first: 3,
             last: 4,
-            label: "Traveling",
+            label: "traveling",
             swatch: "#0a8d9b",
             palette: ["#eef8f8", "#bfeceb", "#7fd6d6", "#b9cdfc", "#a6ecd9"],
         },
         Tint {
             first: 5,
             last: 6,
-            label: "Offline weekend",
+            label: "offline weekend",
             swatch: "#f0a800",
             palette: ["#fbf6ea", "#fde9b8", "#ffd27a", "#ffc2a0", "#f6dca6"],
         },
@@ -704,58 +701,63 @@ mod tests {
     use super::*;
 
     fn ev(start: u16, end: u16) -> Event {
-        event(0, start, end, "", "", Tone::Cobalt)
+        event(0, start, end, "", "", Category::Work)
     }
 
-    fn layout(events: &[Event]) -> Vec<(u16, u16, u16, u16)> {
+    fn layout(events: &[Event]) -> Vec<(u16, u16, u16)> {
         place_day(events)
             .into_iter()
-            .map(|p| (p.event.start, p.event.end, p.column, p.columns))
+            .map(|p| (p.event.start, p.event.end, p.depth))
             .collect()
     }
 
     #[test]
-    fn separate_events_take_full_width() {
+    fn separate_events_sit_flush_left_in_time_order() {
         assert_eq!(
             layout(&[ev(600, 660), ev(540, 600)]),
-            vec![(540, 600, 0, 1), (600, 660, 0, 1)]
+            vec![(540, 600, 0), (600, 660, 0)]
         );
     }
 
     #[test]
-    fn overlapping_events_share_the_width() {
+    fn a_later_overlapping_event_cascades_over_the_earlier_one() {
         assert_eq!(
-            layout(&[ev(600, 660), ev(630, 720)]),
-            vec![(600, 660, 0, 2), (630, 720, 1, 2)]
+            layout(&[ev(630, 720), ev(600, 660)]),
+            vec![(600, 660, 0), (630, 720, 1)]
         );
     }
 
     #[test]
-    fn a_chain_of_overlaps_reuses_free_columns() {
-        // A overlaps B, B overlaps C, but A ends before C starts.
+    fn depth_follows_the_events_still_running() {
+        // A overlaps B and B overlaps C, but A has ended when C starts:
+        // C still nests one level deeper than B, the event it lands on.
         assert_eq!(
             layout(&[ev(600, 660), ev(630, 720), ev(660, 705)]),
-            vec![(600, 660, 0, 2), (630, 720, 1, 2), (660, 705, 0, 2)]
+            vec![(600, 660, 0), (630, 720, 1), (660, 705, 2)]
         );
     }
 
     #[test]
-    fn clusters_are_sized_independently() {
+    fn the_cascade_resets_once_the_day_clears() {
         assert_eq!(
-            layout(&[ev(600, 660), ev(600, 660), ev(600, 660), ev(800, 860)]),
-            vec![
-                (600, 660, 0, 3),
-                (600, 660, 1, 3),
-                (600, 660, 2, 3),
-                (800, 860, 0, 1)
-            ]
+            layout(&[ev(600, 660), ev(610, 640), ev(700, 760)]),
+            vec![(600, 660, 0), (610, 640, 1), (700, 760, 0)]
         );
     }
 
     #[test]
-    fn longer_events_go_left_when_starts_tie() {
-        let placed = layout(&[ev(600, 630), ev(600, 720)]);
-        assert_eq!(placed[0], (600, 720, 0, 2));
+    fn events_up_to_45_minutes_are_short() {
+        let short = |start, end| place_day(&[ev(start, end)])[0].short();
+        assert!(short(540, 585));
+        assert!(!short(540, 600));
+    }
+
+    #[test]
+    fn longer_events_go_underneath_when_starts_tie() {
+        assert_eq!(
+            layout(&[ev(600, 630), ev(600, 720)]),
+            vec![(600, 720, 0), (600, 630, 1)]
+        );
     }
 
     fn all_day(first: usize, last: usize) -> AllDay {
@@ -763,7 +765,7 @@ mod tests {
             first,
             last,
             title: "",
-            tone: Tone::Cobalt,
+            category: Category::Work,
         }
     }
 
