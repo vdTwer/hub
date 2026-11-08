@@ -15,6 +15,7 @@
 
     <div class="scroller">
       <div class="grid">
+        <div class="sticky-head">
         <div class="row head-row">
           <div></div>
           {% for (i, day) in week.days.iter().enumerate() %}
@@ -29,10 +30,12 @@
         </div>
 
         <div class="row allday-row" style="--lanes: {{ week.lane_count() }}">
+          <div class="gutter-cell" aria-hidden="true"></div>
           {% for l in week.lanes() %}
-          <div class="allday {{ l.item.category.class() }}{% if l.multi_day() %} multi-day{% endif %}"
+          <div class="allday {{ l.item.category.class() }}{% if l.multi_day() %} multi-day{% endif %}{% if week.all_day_past(l.item) %} past{% endif %}" title="{{ l.item.title }}"
                style="grid-column: {{ l.grid_start() }} / {{ l.grid_end() }}; grid-row: {{ l.grid_row() }}">{{ l.item.title }}</div>
           {% endfor %}
+        </div>
         </div>
 
         <div class="row body">
@@ -52,7 +55,7 @@
           {% for (i, day) in week.days.iter().enumerate() %}
           <div class="day-col" style="grid-column: {{ i + 2 }}" aria-label="{{ day.name }} {{ day.date }}">
             {% for p in week.placed(i) %}
-            <article class="event {{ p.event.category.class() }}{% if p.short() %} short{% endif %}{% if week.is_current(p.event) %} is-now{% endif %}"
+            <article class="event {{ p.event.category.class() }}{% if p.short() %} short{% endif %}{% if week.is_current(p.event) %} is-now{% elif week.is_past(p.event) %} past{% endif %}" title="{{ p.tooltip() }}"
                      style="top: {{ "{:.3}"|format(p.top()) }}%; height: {{ "{:.3}"|format(p.height()) }}%; --depth: {{ p.depth }}">
               {% if p.short() %}
               <h3>{{ p.event.title }} <span>{{ p.event.start_clock() }}</span></h3>
@@ -64,7 +67,7 @@
             {% endfor %}
 
             {% for t in week.todos_on(i) %}
-            <p class="todo{% if t.done %} done{% endif %}" style="top: {{ "{:.3}"|format(t.top()) }}%"><span class="check" aria-hidden="true"></span><span class="title">{{ t.title }}</span></p>
+            <p class="todo{% if t.done %} done{% endif %}" title="{{ t.title }}, due {{ t.due_clock() }}" style="top: {{ "{:.3}"|format(t.top()) }}%"><span class="check" aria-hidden="true"></span><span class="title">{{ t.title }}</span></p>
             {% endfor %}
 
             {% if week.is_today(i) %}
@@ -90,5 +93,20 @@
       </section>
     </footer>
 </div>
+<script>
+  // Open the week on now: a third of the way down the hours and, on narrow
+  // screens, with today's column just right of the hour gutter.
+  addEventListener("load", () => {
+    const scroller = document.querySelector(".scroller");
+    const line = document.querySelector(".now-line");
+    if (!scroller || !line) return;
+    const box = scroller.getBoundingClientRect();
+    const head = scroller.querySelector(".sticky-head")?.offsetHeight ?? 0;
+    const gutter = scroller.querySelector(".hours")?.offsetWidth ?? 0;
+    const at = line.getBoundingClientRect();
+    scroller.scrollTop += at.top - box.top - head - (scroller.clientHeight - head) / 3;
+    if (at.right > box.right) scroller.scrollLeft += at.left - box.left - gutter;
+  });
+</script>
 <script src="/static/js/stage.js" defer></script>
 {% endblock %}

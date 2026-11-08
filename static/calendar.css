@@ -9,7 +9,7 @@
   --surface: #ffffff;
   --ink: #16161a;
   --ink-2: #6e6e76;
-  --ink-3: #a4a4ab;
+  --ink-3: #8a8a92;
   --hair: rgba(22, 22, 26, 0.07);
   --line: rgba(22, 22, 26, 0.12);
   --now: #e5322b;
@@ -48,20 +48,25 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 .seg button.active { color: var(--ink); background: var(--surface); box-shadow: 0 1px 2px rgba(0, 0, 0, .08), 0 0 0 .5px rgba(0, 0, 0, .06); }
 .seg-solo { height: 34px; border-radius: 10px; box-shadow: 0 0 0 1px var(--line) inset; }
 
-.scroller { overflow-x: auto; }
+.scroller {
+  overflow: auto;
+  height: max(440px, calc(100vh - 290px));
+  overscroll-behavior: contain;
+}
+.sticky-head { position: sticky; top: 0; z-index: 6; background: var(--paper); }
 .grid { min-width: 1090px; }
 .row { display: grid; grid-template-columns: var(--cols); }
 
 /* day heads */
-.head-row { padding-bottom: 16px; }
-.day-head { display: grid; justify-items: start; gap: 4px; padding: 0 var(--room) 0 var(--inset); }
-.day-top { display: flex; align-items: center; gap: 10px; min-width: 0; white-space: nowrap; }
-.day-head .name { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
-.day-head .date { font-size: 22px; font-weight: 600; letter-spacing: -0.02em; line-height: 32px; }
+.head-row { padding-bottom: 12px; }
+.day-head { display: flex; align-items: center; gap: 10px; padding: 0 var(--room) 0 var(--inset); white-space: nowrap; min-width: 0; overflow: hidden; }
+.day-top { display: contents; }
+.day-head .name { order: -2; font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.day-head .date { order: -1; font-size: 22px; font-weight: 600; letter-spacing: -0.02em; line-height: 32px; }
 .day-head.today .name { color: var(--now); }
-.day-head.today .date { color: #fff; background: var(--now); border-radius: 50%; width: 32px; text-align: center; font-size: 17px; }
-.tint-label { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 500; color: color-mix(in srgb, var(--c) 70%, var(--ink)); }
-.tint-label::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--c); }
+.day-head.today .date { color: #fff; background: var(--now); border-radius: 50%; width: 32px; text-align: center; font-size: 16px; }
+.tint-label { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11.5px; font-weight: 500; color: color-mix(in srgb, var(--c) 70%, var(--ink)); }
+.tint-label::before { content: ""; display: inline-block; width: 6px; height: 6px; margin: 0 5px 1px 0; border-radius: 50%; background: var(--c); }
 
 /* the shared slip shape */
 .allday, .event, .someday li.is-event {
@@ -89,7 +94,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   background-image: repeating-linear-gradient(to bottom, transparent 0 calc(var(--hour) - 1px), var(--hair) calc(var(--hour) - 1px) var(--hour));
 }
 .body .tint { grid-row: 1; width: 100%; height: 100%; display: block; opacity: .62; touch-action: none; }
-.hours { grid-column: 1; grid-row: 1; position: relative; font-size: 11px; font-weight: 500; color: var(--ink-3); }
+.hours { grid-column: 1; grid-row: 1; position: sticky; left: 0; z-index: 4; background: var(--paper); font-size: 11px; font-weight: 500; color: var(--ink-3); }
 .hours span { position: absolute; right: 12px; transform: translateY(-50%); }
 .hours span:first-child { display: none; }
 .hours .now-time { right: 6px; padding: 2px 6px; border-radius: 6px; color: #fff; background: var(--now); font-weight: 600; }
@@ -162,3 +167,19 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   .page { padding: 28px 16px 48px; }
   .tray { padding-left: 0; }
 }
+
+/* past events recede: flatter and quieter, so the future stands out */
+.allday.past, .event.past {
+  background: color-mix(in srgb, var(--fill) 55%, var(--paper));
+  color: color-mix(in srgb, var(--c) 60%, var(--paper));
+}
+.allday.past { box-shadow: none; }
+.event.past { box-shadow: 0 0 0 1.5px var(--paper); }
+.event.past p, .event.past h3 span { color: color-mix(in srgb, var(--c) 45%, var(--paper)); }
+
+/* keyboard focus */
+.calendar-page :focus-visible { outline: 2px solid var(--work-ink); outline-offset: 2px; border-radius: 6px; }
+
+/* the gutter cell in the sticky head stays put on sideways scroll too */
+.head-row > :first-child, .allday-row > .gutter-cell { position: sticky; left: 0; background: var(--paper); z-index: 1; }
+.allday-row > .gutter-cell { grid-column: 1; grid-row: 1 / -1; }
