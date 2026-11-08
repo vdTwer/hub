@@ -9,8 +9,7 @@ The first piece, Fluid, on film, renders soft gradients that fold into each othe
 water and prints them through a subtle analog treatment of grain, halation, gate weave and
 flicker. Move the pointer across it, and the dye follows. The second piece, Colorways, pours
 the same fluid into six cards, each built around a different primary color. The third, A week,
-on paper, is a calendar mockup that puts crisp events on a grainy paper week and washes unusual
-days in the fluid.
+on paper, is a minimal calendar mockup in the spirit of Tufte that washes unusual days in the fluid.
 
 Ready to try it? Jump to the [installation instructions](#installation).
 
@@ -45,18 +44,22 @@ Ready to try it? Jump to the [installation instructions](#installation).
 
 ### A week, on paper
 
-- A week view with timed events, single-day and multi-day all-day items, and overlapping events
-  that share their width side by side.
-- Todos are points in time with a checkbox, never blocks, so they read differently from events
-  at a glance.
-- A "Sometime this week" shelf holds four items without a day, both events and todos.
-- Days that differ from the rest (traveling, an offline weekend) get a tinted fluid-on-film
-  background behind their columns, with a label and a key.
-- "Where am I now" shows up three ways: a live chip with the current and next event, a red now
-  line across the week, and a highlighted current event.
-- The layout is computed in Rust: overlap clusters get side-by-side columns, all-day items stack
-  into as few lanes as possible, and nine unit tests cover the edge cases.
-- It is a mockup: the buttons look real but do nothing.
+- The design follows Tufte: every mark carries information. Hue encodes the calendar (work,
+  personal, travel), a fluid-on-film wash marks days that differ from the rest, and red marks
+  now. There are no boxes, shadows, icons or legends beyond three colored words.
+- Overlapping events cascade like paper slips, as in Apple Calendar: a later event is indented
+  and drawn on top of the ones still running.
+- All-day items are thin rules across the days they cover; multi-day ones get end ticks and
+  stack into as few lanes as possible.
+- Todos are points in time with a small circle, never blocks, so they read differently from
+  events at a glance. Done ones are struck through.
+- "Sometime this week" sits in the margin, like a sidenote, holding events and todos without a
+  day.
+- "Where am I now" is a red now line on today, the time in the gutter, the current event shaded
+  deeper, and one sentence under the title: what is running, how long it has left, and what is
+  next.
+- The layout is computed in Rust and covered by ten unit tests. It is a mockup: the controls
+  look real but do nothing.
 
 ### The showcase
 
@@ -97,7 +100,7 @@ The server is written in Rust, the pieces in GLSL ES 3.0, and the runner in plai
 - [Tokio](https://tokio.rs) as the runtime
 
 Clippy runs with the `pedantic` and `nursery` groups, and `unwrap`, `expect` and `panic` are
-denied. Sixteen tests cover the calendar layout and check that every piece has a page and a valid
+denied. Seventeen tests cover the calendar layout and check that every piece has a page and a valid
 shader, that card pieces render one canvas per card, that every palette holds valid hex colors,
 and that the calendar shows each of its features:
 
