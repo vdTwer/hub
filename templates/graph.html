@@ -8,6 +8,7 @@
 <svg width="0" height="0" style="position: absolute" aria-hidden="true">
   <symbol id="people" viewBox="0 0 20 20"><circle cx="7.5" cy="7" r="2.8"/><path d="M2.5 16c.6-2.8 2.6-4.3 5-4.3s4.4 1.5 5 4.3"/><circle cx="14" cy="7.8" r="2.2"/><path d="M14 11.8c1.7 0 3 1.1 3.5 3.2"/></symbol>
   <symbol id="mail" viewBox="0 0 20 20"><path d="M3 5h14v10.5H3z"/><path d="m3.4 5.6 6.6 5.2 6.6-5.2"/></symbol>
+  <symbol id="doc" viewBox="0 0 20 20"><path d="M5.5 3h6l3 3v11h-9z"/><path d="M11.5 3v3h3M8 10h4.5M8 13h4.5"/></symbol>
   <symbol id="cal" viewBox="0 0 20 20"><path d="M3.5 5h13v11.5h-13zM3.5 8.5h13M7 3v3M13 3v3"/></symbol>
   <symbol id="theme" viewBox="0 0 20 20"><circle cx="10" cy="10" r="6.5"/><path d="M10 3.5a6.5 6.5 0 0 1 0 13z" fill="currentColor"/></symbol>
   <symbol id="chev" viewBox="0 0 20 20"><path d="m8 5 5 5-5 5"/></symbol>
@@ -17,13 +18,14 @@
   <header class="graph-bar">
     <div class="titles">
       <h1>Graph</h1>
-      <p>{{ graph.count(Kind::Person) }} people, {{ graph.count(Kind::Thread) }} threads, {{ graph.count(Kind::Plan) }} plans, {{ graph.edges.len() }} links</p>
+      <p>You, {{ graph.count(Kind::Person) - 1 }} people, {{ graph.count(Kind::Thread) }} threads, {{ graph.count(Kind::Plan) }} plans, {{ graph.count(Kind::Note) }} notes, {{ graph.edges.len() }} links</p>
     </div>
     <div class="graph-tools">
       <div class="seg filters" role="group" aria-label="Show">
         <button type="button" class="active" data-kind="person" aria-pressed="true"><i class="key person" aria-hidden="true"></i>People</button>
         <button type="button" class="active" data-kind="thread" aria-pressed="true"><i class="key thread" aria-hidden="true"></i>Threads</button>
         <button type="button" class="active" data-kind="plan" aria-pressed="true"><i class="key plan" aria-hidden="true"></i>Plans</button>
+        <button type="button" class="active" data-kind="note" aria-pressed="true"><i class="key note" aria-hidden="true"></i>Notes</button>
       </div>
       <button type="button" class="icon-btn theme-toggle" title="Darkroom (D)" aria-label="Darkroom" aria-pressed="false"><svg class="sym"><use href="#theme"/></svg></button>
     </div>
@@ -57,6 +59,7 @@
           {% when Kind::Person %}<span class="mono mine">{{ n.initials }}</span>
           {% when Kind::Thread %}<span class="glyph"><svg class="sym"><use href="#mail"/></svg></span>
           {% when Kind::Plan %}<span class="glyph"></span>
+          {% when Kind::Note %}<span class="glyph"><svg class="sym"><use href="#doc"/></svg></span>
           {% endmatch %}
           <span class="node-name">{{ n.title }}</span>
         </button>
@@ -73,6 +76,7 @@
             {% when Kind::Person %}<span class="mono mine">{{ n.initials }}</span>
             {% when Kind::Thread %}<span class="glyph"><svg class="sym"><use href="#mail"/></svg></span>
             {% when Kind::Plan %}<span class="glyph"></span>
+            {% when Kind::Note %}<span class="glyph"><svg class="sym"><use href="#doc"/></svg></span>
             {% endmatch %}
             <div>
               <p class="kind">{{ n.kind.label() }}</p>
@@ -93,8 +97,7 @@
             {% endfor %}
           </ul>
           {% endif %}{% endfor %}
-          {% let (href, app) = n.kind.app() %}
-          <a class="btn open-in" href="{{ href }}">Open in {{ app }}</a>
+          <a class="btn open-in" href="{{ n.href }}">Open in {{ n.kind.app() }}</a>
         </section>
         {% endfor %}
       </aside>

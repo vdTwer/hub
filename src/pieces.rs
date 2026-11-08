@@ -4,6 +4,7 @@
 use crate::calendar::{WEEK, Week};
 use crate::contacts::{BOOK, Book};
 use crate::mail::{MAILBOX, Mailbox};
+use crate::notes::{NOTEBOOK, Notebook};
 
 /// One colorway for a card piece. The shader reads the colors in order as
 /// base, soft, primary, accent and secondary.
@@ -39,7 +40,10 @@ pub enum Layout {
     Contacts(&'static Book),
     /// An app mockup: the people, threads and plans of the other apps as a
     /// graph, with the shader pooling under each category's cluster.
-    Graph(&'static Book),
+    Graph(&'static Notebook),
+    /// An app mockup: Markdown notes whose `@` links reach every other app,
+    /// the open one headed by a still print in its hue.
+    Notes(&'static Notebook),
 }
 
 /// One showcase piece: a layout, a short caption and usually a shader.
@@ -119,7 +123,15 @@ pub const PIECES: &[Piece] = &[
         blurb: "Every person, thread and plan from the other apps as one graph, \
                 with color pooling under each cluster.",
         shader: Some("fluid-grain.frag"),
-        layout: Layout::Graph(&BOOK),
+        layout: Layout::Graph(&NOTEBOOK),
+    },
+    Piece {
+        slug: "notes",
+        title: "Notes, on paper",
+        blurb: "Plain Markdown notes, where an @ links to a person, a thread, a plan \
+                or another note, and every link shows up in the graph.",
+        shader: Some("fluid-grain.frag"),
+        layout: Layout::Notes(&NOTEBOOK),
     },
 ];
 

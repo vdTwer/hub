@@ -7,9 +7,10 @@
 
 use std::borrow::Borrow;
 
-use crate::calendar::{Category, Event, clock};
-use crate::contacts::{Book, CLIMBING, Contact, FAMILY, FILM, TEAM};
-use crate::mail::{Mail, Tag};
+use crate::calendar::{Category, clock};
+use crate::contacts::{CLIMBING, Contact, FAMILY, FILM, TEAM};
+use crate::mail::Tag;
+use crate::notes::{Notebook, Target};
 
 /// The categories, each of which pools its own print under its nodes.
 pub const HUES: [Category; 3] = [Category::Work, Category::Personal, Category::Travel];
@@ -26,10 +27,11 @@ pub enum Kind {
     Person,
     Thread,
     Plan,
+    Note,
 }
 
 impl Kind {
-    pub const ALL: [Self; 3] = [Self::Person, Self::Thread, Self::Plan];
+    pub const ALL: [Self; 4] = [Self::Person, Self::Thread, Self::Plan, Self::Note];
 
     #[must_use]
     pub const fn class(self) -> &'static str {
@@ -37,6 +39,7 @@ impl Kind {
             Self::Person => "person",
             Self::Thread => "thread",
             Self::Plan => "plan",
+            Self::Note => "note",
         }
     }
 
@@ -46,6 +49,7 @@ impl Kind {
             Self::Person => "Person",
             Self::Thread => "Thread",
             Self::Plan => "Plan",
+            Self::Note => "Note",
         }
     }
 
@@ -55,16 +59,18 @@ impl Kind {
             Self::Person => "People",
             Self::Thread => "Threads",
             Self::Plan => "Plans",
+            Self::Note => "Notes",
         }
     }
 
     /// The app that owns this kind of node.
     #[must_use]
-    pub const fn app(self) -> (&'static str, &'static str) {
+    pub const fn app(self) -> &'static str {
         match self {
-            Self::Person => ("/p/contacts", "Contacts"),
-            Self::Thread => ("/p/mail", "Mail"),
-            Self::Plan => ("/p/calendar", "Calendar"),
+            Self::Person => "Contacts",
+            Self::Thread => "Mail",
+            Self::Plan => "Calendar",
+            Self::Note => "Notes",
         }
     }
 }
@@ -79,6 +85,8 @@ pub struct Node {
     /// The category class: work, personal, travel or plain.
     pub hue: &'static str,
     pub initials: String,
+    /// Where the node opens: its app, or the note itself.
+    pub href: String,
     /// The position in the field, from 0 to 1 on both axes.
     pub x: f64,
     pub y: f64,
@@ -99,6 +107,7 @@ impl Node {
             sub,
             hue,
             initials: String::new(),
+            href: String::new(),
             x: 0.0,
             y: 0.0,
         }
@@ -154,91 +163,41 @@ pub struct Graph {
     pub focus: usize,
 }
 
-fn hue_of(tags: &[Tag]) -> &'static str {
-    tags.iter()
-        .find_map(|t| t.hue)
-        .map_or("plain", Category::class)
-}
-
 impl Graph {
-    /// Every person in the book, and every thread and plan that links to
-    /// someone or something, laid out.
+    /// You, every person in the book and every note, and every thread and
+    /// plan that links to someone or something, laid out.
     #[must_use]
-    pub fn of(book: &Book) -> Self {
-        let people = book.contacts;
-        let mails = book.mail.mails;
-        let events = book.week.events;
+    pub fn of(notebook: &Notebook) -> Self {
+        let book = notebook.book;
+        let links = links(notebook);
+        let linked = |t: Target| links.iter().any(|&(a, b, _)| a == t || b == t);
 
-        let (threads, plans) = found(book);
+        let mut targets: Vec<Target> = (0..book.contacts.len()).map(Target::Person).collect();
+        targets.push(Target::Me);
+        targets.extend(
+            (0..book.mail.mails.len())
+                .map(Target::Thread)
+                .filter(|&t| linked(t)),
+        );
+        targets.extend(
+            (0..book.week.events.len())
+                .map(Target::Plan)
+                .filter(|&t| linked(t)),
+        );
+        targets.extend((0..notebook.notes.len()).map(Target::Note));
 
-        let mut nodes: Vec<Node> = people
+        let mut nodes: Vec<Node> = targets.iter().map(|&t| node(notebook, t)).collect();
+        let at = |t: Target| targets.iter().position(|&x| x == t);
+        let edges: Vec<Edge> = links
             .iter()
-            .enumerate()
-            .map(|(i, c)| Node {
-                initials: c.initials(),
-                ..Node::new(
-                    format!("p{i}"),
-                    Kind::Person,
-                    c.name,
-                    c.role.to_owned(),
-                    c.category.class(),
-                )
+            .filter_map(|&(a, b, via)| {
+                Some(Edge {
+                    a: at(a)?,
+                    b: at(b)?,
+                    via,
+                })
             })
             .collect();
-        let first_thread = nodes.len();
-        nodes.extend(threads.iter().map(|&(j, _, _)| {
-            let m = &mails[j];
-            let sub = format!("{}, {}", m.from, book.mail.when(m.stamp));
-            Node::new(
-                format!("t{j}"),
-                Kind::Thread,
-                m.subject,
-                sub,
-                hue_of(m.tags),
-            )
-        }));
-        let first_plan = nodes.len();
-        nodes.extend(plans.iter().map(|&(e, _)| {
-            let ev = &events[e];
-            let day = book.week.days.get(ev.day).map_or("", |d| d.name);
-            let sub = format!("{day}, {}, {}", clock(ev.start), ev.place);
-            Node::new(
-                format!("e{e}"),
-                Kind::Plan,
-                ev.title,
-                sub,
-                ev.category.class(),
-            )
-        }));
-        let plan_node = |e: usize| {
-            plans
-                .iter()
-                .position(|&(x, _)| x == e)
-                .map(|k| first_plan + k)
-        };
-
-        let mut edges = circles(people);
-        for (k, (_, ps, es)) in threads.iter().enumerate() {
-            let t = first_thread + k;
-            edges.extend(ps.iter().map(|&p| Edge {
-                a: p,
-                b: t,
-                via: None,
-            }));
-            edges.extend(es.iter().filter_map(|&e| plan_node(e)).map(|n| Edge {
-                a: t,
-                b: n,
-                via: None,
-            }));
-        }
-        for (k, (_, ps)) in plans.iter().enumerate() {
-            let n = first_plan + k;
-            edges.extend(ps.iter().map(|&p| Edge {
-                a: p,
-                b: n,
-                via: None,
-            }));
-        }
 
         let placed = settle(nodes.len(), &edges);
         for (node, (x, y)) in nodes.iter_mut().zip(placed) {
@@ -341,54 +300,108 @@ impl Graph {
     }
 }
 
-/// A thread by its index in the mailbox, with the people and plans it
-/// links to.
-type Found = (usize, Vec<usize>, Vec<usize>);
-
-/// The threads and plans that link to anything, each with what it links to.
-/// A plan is an index into the week's events, with its people.
-fn found(book: &Book) -> (Vec<Found>, Vec<(usize, Vec<usize>)>) {
+/// Every link the apps know of, each once: circles between people, the
+/// people and plans of threads, the people of plans, you in your threads,
+/// and whatever a note names with `@`.
+fn links(notebook: &Notebook) -> Vec<(Target, Target, Option<&'static str>)> {
+    let book = notebook.book;
     let people = book.contacts;
     let events = book.week.events;
-    let open_plans = book.mail.thread.linked;
-    let event_index = |title: &str| events.iter().position(|e| e.title == title);
-    let mail_people = |m: &Mail| -> Vec<usize> {
-        (0..people.len())
-            .filter(|&p| people[p].appears_in(m.from) || people[p].appears_in(m.subject))
-            .collect()
-    };
-    let mail_plans = |(j, m): (usize, &Mail)| -> Vec<usize> {
-        let mut plans: Vec<usize> = (0..events.len())
-            .filter(|&e| m.subject.contains(events[e].title))
-            .collect();
-        if j == book.mail.open {
-            plans.extend(open_plans.iter().filter_map(|l| event_index(l.title)));
+    let mut links: Vec<(Target, Target, Option<&'static str>)> = circles(people)
+        .into_iter()
+        .map(|e| (Target::Person(e.a), Target::Person(e.b), e.via))
+        .collect();
+    for (j, m) in book.mail.mails.iter().enumerate() {
+        let thread = Target::Thread(j);
+        if m.from.split(", ").any(|w| w == "me") {
+            links.push((Target::Me, thread, None));
         }
-        plans.sort_unstable();
-        plans.dedup();
-        plans
-    };
-    let event_people = |e: &Event| -> Vec<usize> {
-        (0..people.len())
-            .filter(|&p| people[p].appears_in(e.title))
-            .collect()
-    };
+        for (p, c) in people.iter().enumerate() {
+            if c.appears_in(m.from) || c.appears_in(m.subject) {
+                links.push((Target::Person(p), thread, None));
+            }
+        }
+        for (e, ev) in events.iter().enumerate() {
+            let made =
+                j == book.mail.open && book.mail.thread.linked.iter().any(|l| l.title == ev.title);
+            if made || m.subject.contains(ev.title) {
+                links.push((thread, Target::Plan(e), None));
+            }
+        }
+    }
+    for (e, ev) in events.iter().enumerate() {
+        for (p, c) in people.iter().enumerate() {
+            if c.appears_in(ev.title) {
+                links.push((Target::Person(p), Target::Plan(e), None));
+            }
+        }
+    }
+    for i in 0..notebook.notes.len() {
+        let note = Target::Note(i);
+        links.extend(
+            notebook
+                .mentions(i)
+                .into_iter()
+                .filter(|&t| t != note)
+                .map(|t| (note, t, None)),
+        );
+    }
+    let mut unique: Vec<(Target, Target, Option<&'static str>)> = Vec::new();
+    for link in links {
+        let (a, b, _) = link;
+        if !unique
+            .iter()
+            .any(|&(x, y, _)| (x, y) == (a, b) || (x, y) == (b, a))
+        {
+            unique.push(link);
+        }
+    }
+    unique
+}
 
-    let threads: Vec<Found> = book
-        .mail
-        .mails
-        .iter()
-        .enumerate()
-        .map(|(j, m)| (j, mail_people(m), mail_plans((j, m))))
-        .filter(|(_, ps, es)| !ps.is_empty() || !es.is_empty())
-        .collect();
-    let plans: Vec<(usize, Vec<usize>)> = events
-        .iter()
-        .enumerate()
-        .map(|(e, ev)| (e, event_people(ev)))
-        .filter(|(e, ps)| !ps.is_empty() || threads.iter().any(|(_, _, es)| es.contains(e)))
-        .collect();
-    (threads, plans)
+fn node(notebook: &Notebook, t: Target) -> Node {
+    let book = notebook.book;
+    let (id, kind, sub, initials) = match t {
+        Target::Me => (
+            "me".to_owned(),
+            Kind::Person,
+            "That's you".to_owned(),
+            "Me".to_owned(),
+        ),
+        Target::Person(i) => {
+            let c = book.contact(i);
+            (
+                format!("p{i}"),
+                Kind::Person,
+                c.role.to_owned(),
+                c.initials(),
+            )
+        }
+        Target::Thread(j) => {
+            let m = book.mail.mail(j);
+            let sub = format!("{}, {}", m.from, book.mail.when(m.stamp));
+            (format!("t{j}"), Kind::Thread, sub, String::new())
+        }
+        Target::Plan(e) => {
+            let ev = book.week.events.get(e);
+            let sub = ev.map_or_else(String::new, |ev| {
+                let day = book.week.days.get(ev.day).map_or("", |d| d.name);
+                format!("{day}, {}, {}", clock(ev.start), ev.place)
+            });
+            (format!("e{e}"), Kind::Plan, sub, String::new())
+        }
+        Target::Note(i) => (
+            format!("n{i}"),
+            Kind::Note,
+            format!("Note, edited {}", notebook.when(i)),
+            String::new(),
+        ),
+    };
+    Node {
+        initials,
+        href: notebook.href(t),
+        ..Node::new(id, kind, notebook.title(t), sub, notebook.hue(t))
+    }
 }
 
 /// Links between people who share a circle, such as Team or Climbing.
@@ -435,7 +448,7 @@ fn settle(n: usize, edges: &[Edge]) -> Vec<(f64, f64)> {
             )
         })
         .collect();
-    let k = (ASPECT / count).sqrt();
+    let k = (ASPECT / count).sqrt() * 1.25;
 
     for step in 0..STEPS {
         let heat = 0.06f64.mul_add(1.0 - f64::from(step) / f64::from(STEPS), 0.001);
@@ -482,18 +495,63 @@ fn settle(n: usize, edges: &[Edge]) -> Vec<(f64, f64)> {
             (v - lo) / (hi - lo)
         }
     };
-    pos.into_iter()
+    let mut fitted: Vec<(f64, f64)> = pos
+        .into_iter()
         .map(|(x, y)| (fit(x, lo_x, hi_x), fit(y, lo_y, hi_y)))
-        .collect()
+        .collect();
+    declutter(&mut fitted);
+    fitted
+}
+
+/// The box a node and its label take up, as a share of the field.
+const LABEL: (f64, f64) = (0.14, 0.085);
+
+/// Springs know points, not labels: nudge apart, mostly up and down, any
+/// two nodes whose labels would overlap, keeping everything in the field.
+fn declutter(pos: &mut [(f64, f64)]) {
+    for _ in 0..1000 {
+        let mut moved = false;
+        for i in 0..pos.len() {
+            for j in i + 1..pos.len() {
+                let (dx, dy) = (pos[j].0 - pos[i].0, pos[j].1 - pos[i].1);
+                if dx.abs() >= LABEL.0 || dy.abs() >= LABEL.1 {
+                    continue;
+                }
+                let push = (LABEL.1 - dy.abs()) / 2.0 + 0.001;
+                let down = if dy == 0.0 { 1.0 } else { dy.signum() };
+                pos[i].1 = (-down).mul_add(push, pos[i].1);
+                pos[j].1 = down.mul_add(push, pos[j].1);
+                moved = true;
+            }
+        }
+        if !moved {
+            break;
+        }
+    }
+    // spreading may have pushed nodes past the edges: shrink back to fit
+    let (lo, hi) = pos.iter().fold((f64::MAX, f64::MIN), |(lo, hi), p| {
+        (lo.min(p.1), hi.max(p.1))
+    });
+    if hi - lo > 1.0 {
+        for p in pos.iter_mut() {
+            p.1 = (p.1 - lo) / (hi - lo);
+        }
+    } else if lo < 0.0 || hi > 1.0 {
+        let shift = if lo < 0.0 { -lo } else { 1.0 - hi };
+        for p in pos.iter_mut() {
+            p.1 += shift;
+        }
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::contacts::BOOK;
+    use crate::notes::NOTEBOOK;
 
     fn graph() -> Graph {
-        Graph::of(&BOOK)
+        Graph::of(&NOTEBOOK)
     }
 
     fn find(g: &Graph, title: &str) -> usize {
@@ -511,12 +569,13 @@ mod tests {
     #[test]
     fn everyone_is_a_node_and_nothing_else_is_alone() {
         let g = graph();
-        assert_eq!(g.count(Kind::Person), BOOK.contacts.len());
+        assert_eq!(g.count(Kind::Person), BOOK.contacts.len() + 1);
+        assert_eq!(g.count(Kind::Note), NOTEBOOK.notes.len());
         for (i, n) in g.nodes.iter().enumerate() {
             assert!(g.degree(i) > 0, "{} has no links", n.title);
         }
         assert_eq!(find(&g, "Standup"), usize::MAX);
-        assert_eq!(find(&g, "Your scans are ready"), usize::MAX);
+        assert_eq!(find(&g, "Dentist"), usize::MAX);
     }
 
     #[test]
@@ -534,6 +593,23 @@ mod tests {
         assert!(!linked(&g, "Mara Okafor", "Ava Lindqvist"));
         let (mara, nils) = (find(&g, "Mara Okafor"), find(&g, "Nils Berg"));
         assert_eq!(g.via(mara, nils), Some("Climbing"));
+    }
+
+    #[test]
+    fn you_are_in_your_threads_and_notes() {
+        let g = graph();
+        assert!(linked(&g, "You", "Off-site in Berlin: travel and agenda"));
+        assert!(linked(&g, "You", "November"));
+        assert!(!linked(&g, "You", "This week on 35mm"));
+    }
+
+    #[test]
+    fn notes_link_to_what_they_name() {
+        let g = graph();
+        assert!(linked(&g, "Super 8 night", "Theo Brandt"));
+        assert!(linked(&g, "Super 8 night", "Lena's birthday"));
+        assert!(linked(&g, "Off-site agenda", "Train to Berlin"));
+        assert!(linked(&g, "Super 8 night", "Your scans are ready"));
     }
 
     #[test]
@@ -591,8 +667,8 @@ mod tests {
         }
         for (i, a) in g.nodes.iter().enumerate() {
             for b in &g.nodes[i + 1..] {
-                let d = ((a.x - b.x) * ASPECT).hypot(a.y - b.y);
-                assert!(d > 0.07, "{} and {} at {d:.3}", a.title, b.title);
+                let apart = (a.x - b.x).abs() >= LABEL.0 || (a.y - b.y).abs() >= 0.85 * LABEL.1;
+                assert!(apart, "{} and {} overlap", a.title, b.title);
             }
         }
     }

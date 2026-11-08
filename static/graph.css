@@ -118,3 +118,16 @@
 /* under the safelight, the pools glow rather than flood */
 :root[data-theme="dark"] .pool { opacity: .6; }
 @media (max-width: 760px) { .graph-stage { min-width: 820px; } }
+
+/* notes, and you: a page in its hue, and the one graphite disc */
+.me { --fill: var(--fill-3); --c: var(--ink); }
+.key.note { width: 8px; height: 10px; border-radius: 1.5px; background: var(--surface); box-shadow: inset 0 0 0 1.25px var(--ink-3); }
+.near .key.note { box-shadow: inset 0 0 0 1.25px var(--c); }
+.node.note { --s: 22px; }
+.note .glyph { border-radius: 4px 7px 4px 4px; background: var(--surface); color: var(--c); box-shadow: var(--e-1), 0 0 0 2px var(--paper); }
+.note .glyph .sym { width: 14px; height: 14px; stroke-width: 1.6; }
+.inspect-head.note .glyph { border-radius: 8px; }
+.inspect-head.note .glyph .sym { width: 20px; height: 20px; }
+.me .mono, .me .mono.mine { background: var(--accent); color: var(--on-accent); }
+.node.me .node-name { font-weight: 700; }
+.hide-note .node.note, .hide-note .edge[data-kinds~="note"] { display: none; }

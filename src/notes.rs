@@ -8,7 +8,7 @@
 
 use std::borrow::Borrow;
 
-use pulldown_cmark::{CowStr, Event, Options, Parser, TextMergeStream, html};
+use pulldown_cmark::{CowStr, Event, Options, Parser, TagEnd, TextMergeStream, html};
 
 use crate::calendar::Category;
 use crate::contacts::{BOOK, Book, CLIMBING, FAMILY};
@@ -186,6 +186,38 @@ impl Notebook {
             .collect()
     }
 
+    /// The list's groups: pinned notes, then the rest.
+    #[must_use]
+    pub fn groups(&self) -> Vec<(&'static str, Vec<usize>)> {
+        let (pinned, recent) = self.order();
+        vec![("Pinned", pinned), ("Recent", recent)]
+    }
+
+    /// A note's links by kind, for its footer, leaving out empty kinds.
+    #[must_use]
+    pub fn link_groups(
+        &self,
+        i: impl Borrow<usize>,
+    ) -> Vec<(&'static str, &'static str, Vec<Target>)> {
+        let i = *i.borrow();
+        [
+            ("person", "People"),
+            ("thread", "Threads"),
+            ("plan", "Plans"),
+            ("note", "Notes"),
+        ]
+        .into_iter()
+        .map(|(kind, label)| (kind, label, self.mentions_of(i, kind)))
+        .filter(|(_, _, ts)| !ts.is_empty())
+        .collect()
+    }
+
+    /// The notes that link to note `i`, as links.
+    #[must_use]
+    pub fn linked_from(&self, i: impl Borrow<usize>) -> Vec<Target> {
+        self.backlinks(i).into_iter().map(Target::Note).collect()
+    }
+
     /// The links of note `i` of one kind, for the note's footer.
     #[must_use]
     pub fn mentions_of(&self, i: impl Borrow<usize>, kind: &str) -> Vec<Target> {
@@ -330,7 +362,15 @@ impl Notebook {
                         .map(|(run, _)| run.trim_start_matches('@'))
                         .collect::<String>(),
                 ),
-                Event::End(_) | Event::SoftBreak | Event::HardBreak => words.push(" ".to_owned()),
+                Event::End(
+                    TagEnd::Paragraph
+                    | TagEnd::Heading(_)
+                    | TagEnd::Item
+                    | TagEnd::BlockQuote(_)
+                    | TagEnd::CodeBlock,
+                )
+                | Event::SoftBreak
+                | Event::HardBreak => words.push(" ".to_owned()),
                 _ => {}
             }
         }
@@ -339,6 +379,22 @@ impl Notebook {
             .split_whitespace()
             .collect::<Vec<_>>()
             .join(" ")
+    }
+
+    /// The palette of a note's print: its category's, or work's for a
+    /// note without one.
+    #[must_use]
+    pub fn palette_attr(&self, i: impl Borrow<usize>) -> String {
+        self.note(i)
+            .category()
+            .unwrap_or(Category::Work)
+            .palette()
+            .join(",")
+    }
+
+    #[must_use]
+    pub fn pinned(&self) -> usize {
+        self.notes.iter().filter(|n| n.pinned).count()
     }
 
     #[must_use]
@@ -620,5 +676,6 @@ mod tests {
         let s = NOTEBOOK.snippet(0);
         assert!(s.starts_with("Two days in Berlin with Ava, Jonas and Priya."));
         assert!(!s.contains('#') && !s.contains('*') && !s.contains('@'));
+        assert!(NOTEBOOK.snippet(2).contains("Shaders: he"));
     }
 }

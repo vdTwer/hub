@@ -19,6 +19,7 @@ use calendar::Week;
 use contacts::Book;
 use graph::{Graph, HUES, Kind};
 use mail::{Mailbox, Part};
+use notes::Notebook;
 use pieces::{Card, Layout, PIECES, Piece};
 use tower_http::services::ServeDir;
 
@@ -53,6 +54,13 @@ struct ContactsPage {
 struct GraphPage {
     piece: &'static Piece,
     graph: Graph,
+}
+
+#[derive(Template)]
+#[template(path = "notes.html")]
+struct NotesPage {
+    piece: &'static Piece,
+    notes: &'static Notebook,
 }
 
 #[derive(Template)]
@@ -96,6 +104,7 @@ async fn piece(Path(slug): Path<String>) -> Response {
                 piece,
                 graph: Graph::of(book),
             }),
+            Layout::Notes(notes) => render(&NotesPage { piece, notes }),
         },
     )
 }
