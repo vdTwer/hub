@@ -44,11 +44,12 @@ Ready to try it? Jump to the [installation instructions](#installation).
 
 ### A week, on paper
 
-- Every mark carries information, in the spirit of Tufte. Hue encodes the calendar (work,
-  personal, travel), a fluid-on-film wash marks days that differ from the rest, and red marks
-  now.
+- Every mark carries information, in the spirit of Tufte. Hue encodes the calendar: cobalt for
+  work, apricot for personal and lagoon for travel, softened from the fluid's own palette so the
+  fills sit on the paper. A fluid-on-film wash marks days that differ from the rest, and red
+  marks now.
 - Shapes share one language: squircle corners (CSS `corner-shape: squircle`, round where a
-  browser lacks it), a solid fill in the category color and a soft shadow, for events, all-day
+  browser lacks it), a solid fill and a soft shadow, for events, all-day
   bars and undated items alike. Todos are the one outlined shape.
 - Events sit flush left in their day and leave room on the right, so the free time stays
   visible and clickable.
