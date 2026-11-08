@@ -1,4 +1,7 @@
-// Minimal WebGL2 stage: draws one full-screen fragment shader.
+// Minimal WebGL2 stage: every <canvas data-shader="..."> on the page draws
+// one fragment shader over its whole area. A canvas may also carry
+// data-palette="#rrggbb,..." which arrives as u_palette (vec3[5], linear
+// light) with u_paletteSize set to the number of colors.
 // Uniforms every piece may use:
 //   u_res  (vec2)  canvas size in device pixels
 //   u_time (float) seconds since start
@@ -12,6 +15,7 @@
 "use strict";
 
 const STIR = 12;
+const PALETTE = 5;
 const SCENE_DIVISOR = 4;
 
 const VERT = `#version 300 es
@@ -49,14 +53,28 @@ function fail(message) {
   document.body.append(note);
 }
 
-async function main() {
-  const canvas = document.getElementById("stage");
-  const gl = canvas.getContext("webgl2", { antialias: false, alpha: false });
-  if (!gl) return fail("WebGL2 is not available in this browser.");
+function hexToLinear(hex) {
+  const n = parseInt(hex.trim().replace("#", ""), 16);
+  return [16, 8, 0].map((shift) => Math.pow(((n >> shift) & 255) / 255, 2.2));
+}
 
-  const response = await fetch(canvas.dataset.shader);
-  if (!response.ok) return fail(`Could not load ${canvas.dataset.shader}`);
-  const program = link(gl, await response.text());
+const shaderCache = new Map();
+function loadShader(url) {
+  if (!shaderCache.has(url)) {
+    shaderCache.set(url, fetch(url).then((r) => {
+      if (!r.ok) throw new Error(`Could not load ${url}`);
+      return r.text();
+    }));
+  }
+  return shaderCache.get(url);
+}
+
+// Sets up one canvas and returns its draw(now, time, film) function.
+async function stage(canvas) {
+  const gl = canvas.getContext("webgl2", { antialias: false, alpha: false });
+  if (!gl) throw new Error("WebGL2 is not available in this browser.");
+
+  const program = link(gl, await loadShader(canvas.dataset.shader));
   gl.useProgram(program);
 
   gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
@@ -69,12 +87,22 @@ async function main() {
   const uPass = u("u_pass"), uScene = u("u_scene");
   const uStir = u("u_stir"), uStirAge = u("u_stirAge");
 
+  const colors = (canvas.dataset.palette ?? "").split(",").filter(Boolean).slice(0, PALETTE);
+  const palette = new Float32Array(3 * PALETTE);
+  colors.forEach((hex, i) => palette.set(hexToLinear(hex), 3 * i));
+  gl.uniform3fv(u("u_palette"), palette);
+  gl.uniform1i(u("u_paletteSize"), colors.length);
+
   // Pointer trail, newest first. Positions use the shader's uv convention.
   const trail = [];
   let lastMove = null;
   canvas.addEventListener("pointermove", (e) => {
-    const w = canvas.clientWidth, h = canvas.clientHeight, s = Math.min(w, h);
-    const pos = [(e.clientX - w / 2) / s, (h / 2 - e.clientY) / s];
+    const box = canvas.getBoundingClientRect();
+    const s = Math.min(box.width, box.height);
+    const pos = [
+      (e.clientX - box.left - box.width / 2) / s,
+      (box.top + box.height / 2 - e.clientY) / s,
+    ];
     const now = performance.now();
     if (lastMove && now - lastMove.t < 16) return;
     const dt = lastMove ? Math.max((now - lastMove.t) / 1000, 1e-3) : 1;
@@ -118,36 +146,22 @@ async function main() {
     scene = { tex, fbo, w, h };
   };
 
-  // Film toggle, eased so the switch reads as a dissolve.
-  const params = new URLSearchParams(location.search);
-  const button = document.getElementById("film");
-  let filmTarget = params.get("film") === "0" ? 0 : 1, film = filmTarget;
-  const toggle = () => {
-    filmTarget = 1 - filmTarget;
-    button.setAttribute("aria-pressed", String(filmTarget === 1));
-    button.textContent = `Film: ${filmTarget ? "on" : "off"}`;
-  };
-  button?.addEventListener("click", toggle);
-  if (filmTarget === 0) { filmTarget = 1; toggle(); }
-  addEventListener("keydown", (e) => { if (e.key === "f") toggle(); });
-
   const resize = () => {
     const dpr = Math.min(devicePixelRatio || 1, 2);
-    canvas.width = Math.round(canvas.clientWidth * dpr);
-    canvas.height = Math.round(canvas.clientHeight * dpr);
+    canvas.width = Math.max(1, Math.round(canvas.clientWidth * dpr));
+    canvas.height = Math.max(1, Math.round(canvas.clientHeight * dpr));
     makeScene();
   };
-  addEventListener("resize", resize);
+  new ResizeObserver(resize).observe(canvas);
   resize();
 
-  // ?t=12.5 freezes time and ?film=0 starts clean: handy for stills.
-  const frozen = parseFloat(params.get("t"));
-  const start = performance.now();
-  let last = start;
-  const frame = (now) => {
-    film += (filmTarget - film) * (1 - Math.exp(-(now - last) / 180));
-    last = now;
-    gl.uniform1f(uTime, Number.isFinite(frozen) ? frozen : (now - start) / 1000);
+  // Only draw while the canvas is on screen.
+  let visible = true;
+  new IntersectionObserver(([entry]) => { visible = entry.isIntersecting; }).observe(canvas);
+
+  return (now, time, film) => {
+    if (!visible) return;
+    gl.uniform1f(uTime, time);
     gl.uniform1f(uFilm, film);
     uploadTrail(now);
 
@@ -168,6 +182,37 @@ async function main() {
     gl.uniform2f(uRes, canvas.width, canvas.height);
     gl.uniform1i(uPass, 1);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
+  };
+}
+
+async function main() {
+  const canvases = [...document.querySelectorAll("canvas[data-shader]")];
+  const draws = await Promise.all(canvases.map(stage));
+
+  // Film toggle, shared by every canvas and eased so it reads as a dissolve.
+  const params = new URLSearchParams(location.search);
+  const button = document.getElementById("film");
+  let filmTarget = params.get("film") === "0" ? 0 : 1, film = filmTarget;
+  const toggle = () => {
+    filmTarget = 1 - filmTarget;
+    button?.setAttribute("aria-pressed", String(filmTarget === 1));
+    if (button) button.textContent = `Film: ${filmTarget ? "on" : "off"}`;
+  };
+  button?.addEventListener("click", toggle);
+  if (filmTarget === 0) { filmTarget = 1; toggle(); }
+  addEventListener("keydown", (e) => { if (e.key === "f") toggle(); });
+
+  // ?t=12.5 freezes time and ?film=0 starts clean: handy for stills.
+  // Each canvas may offset its clock with data-time-offset.
+  const frozen = parseFloat(params.get("t"));
+  const offsets = canvases.map((c) => parseFloat(c.dataset.timeOffset ?? "0") || 0);
+  const start = performance.now();
+  let last = start;
+  const frame = (now) => {
+    film += (filmTarget - film) * (1 - Math.exp(-(now - last) / 180));
+    last = now;
+    const time = Number.isFinite(frozen) ? frozen : (now - start) / 1000;
+    draws.forEach((draw, i) => draw(now, time + offsets[i], film));
     requestAnimationFrame(frame);
   };
   requestAnimationFrame(frame);
