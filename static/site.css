@@ -1,0 +1,50 @@
+:root {
+  --ink: #f2efe9;
+  --dim: rgba(242, 239, 233, 0.62);
+  --bg: #0d0d0f;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; margin: 0; }
+html, body { height: 100%; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font: 400 16px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: inherit; text-decoration: none; }
+.label {
+  font: 500 11px/1 ui-monospace, "SF Mono", Menlo, monospace;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+/* index */
+.index { max-width: 960px; margin: 0 auto; padding: 12vh 24px; }
+.index h1 { font-size: clamp(36px, 7vw, 72px); font-weight: 500; letter-spacing: -0.03em; line-height: 1.02; margin-top: 16px; }
+.pieces { list-style: none; padding: 0; margin-top: 10vh; border-top: 1px solid rgba(242,239,233,.14); }
+.pieces a { display: grid; grid-template-columns: 48px 1fr; gap: 6px 16px; padding: 24px 0; border-bottom: 1px solid rgba(242,239,233,.14); }
+.pieces .label { padding-top: 7px; }
+.pieces .title { font-size: 24px; letter-spacing: -0.01em; }
+.pieces .blurb { grid-column: 2; color: var(--dim); max-width: 52ch; }
+.pieces a:hover .title { text-decoration: underline; text-underline-offset: 4px; }
+
+/* stage */
+.stage { overflow: hidden; }
+#stage { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; }
+.caption {
+  position: fixed; left: 24px; right: 24px; bottom: 24px;
+  display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 6px 24px;
+  color: #121218;
+}
+.caption .label { color: inherit; opacity: .7; }
+.caption h1 { grid-column: 1; font-size: 28px; font-weight: 500; letter-spacing: -0.02em; }
+.caption p { grid-column: 1; max-width: 44ch; opacity: .8; }
+.caption a { grid-column: 1; grid-row: 1; margin-bottom: 8px; }
+.caption button { grid-column: 2; grid-row: 4; background: none; border: 1px solid currentColor; border-radius: 999px; padding: 9px 14px; cursor: pointer; }
+@media (max-width: 560px) {
+  .caption { grid-template-columns: 1fr; }
+  .caption button { grid-column: 1; grid-row: auto; justify-self: start; margin-top: 8px; }
+}
+.error { position: fixed; top: 24px; left: 24px; right: 24px; color: #ff8a7a; font: 12px/1.5 ui-monospace, monospace; white-space: pre-wrap; }

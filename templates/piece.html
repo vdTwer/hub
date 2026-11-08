@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}{{ piece.title }}{% endblock %}
+{% block body_class %}stage{% endblock %}
+{% block content %}
+<canvas id="stage" data-shader="/static/shaders/{{ piece.shader }}"></canvas>
+<footer class="caption">
+  <a class="label" href="/">&larr; Showcase</a>
+  <h1>{{ piece.title }}</h1>
+  <p>{{ piece.blurb }}</p>
+  <button id="film" class="label" type="button" aria-pressed="true">Film: on</button>
+</footer>
+<script src="/static/js/stage.js" defer></script>
+{% endblock %}

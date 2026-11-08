@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Showcase{% endblock %}
+{% block body_class %}index{% endblock %}
+{% block content %}
+<header>
+  <p class="label">Design showcase</p>
+  <h1>Sleek things,<br>shot on old media.</h1>
+</header>
+<ol class="pieces">
+  {% for piece in pieces %}
+  <li>
+    <a href="/p/{{ piece.slug }}">
+      <span class="label">{{ "{:02}"|format(loop.index) }}</span>
+      <span class="title">{{ piece.title }}</span>
+      <span class="blurb">{{ piece.blurb }}</span>
+    </a>
+  </li>
+  {% endfor %}
+</ol>
+{% endblock %}
