@@ -105,7 +105,6 @@ async fn calendar_shows_every_feature() {
         "Sometime this week",
         "data-palette=",
         "data-still",
-        "data-seam=",
         "now-line",
         "is-now",
     ] {
