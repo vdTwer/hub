@@ -2,6 +2,7 @@
 
 pub mod calendar;
 pub mod contacts;
+pub mod graph;
 pub mod mail;
 pub mod pieces;
 
