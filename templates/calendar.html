@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+{% block title %}{{ piece.title }}{% endblock %}
+{% block body_class %}calendar-page{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="/static/calendar.css">
+<div class="app">
+  <main class="week">
+    <header class="toolbar">
+      <a class="back label" href="/">&larr; Showcase</a>
+      <h1>{{ week.title }}</h1>
+      <div class="controls">
+        <div class="segmented" role="group" aria-label="Navigate">
+          <button type="button" aria-label="Previous week">&lsaquo;</button>
+          <button type="button">Today</button>
+          <button type="button" aria-label="Next week">&rsaquo;</button>
+        </div>
+        <div class="segmented" role="group" aria-label="View">
+          <button type="button">Day</button>
+          <button type="button" class="active">Week</button>
+          <button type="button">Month</button>
+        </div>
+        <button id="film" class="pill" type="button" aria-pressed="true">Film: on</button>
+      </div>
+    </header>
+
+    <p class="now-chip">
+      <span class="pulse" aria-hidden="true"></span>
+      <span class="label">Now {{ week.now_clock() }}</span>
+      {% if let Some(current) = week.current() %}
+      <span>{{ current.title }}</span>
+      <span class="muted">{{ week.minutes_left() }} min left</span>
+      {% endif %}
+      {% if let Some(next) = week.next() %}
+      <span class="muted">Next: {{ next.title }} at {{ next.start_clock() }}</span>
+      {% endif %}
+    </p>
+
+    <div class="scroller">
+      <div class="grid">
+        <div class="row head-row">
+          <div class="gutter"></div>
+          {% for (i, day) in week.days.iter().enumerate() %}
+          <div class="day-head{% if week.is_today(i) %} today{% endif %}{% if week.tint_on(i).is_some() %} tinted{% endif %}">
+            <span class="label">{{ day.name }}</span>
+            <span class="date">{{ day.date }}</span>
+            {% if let Some(t) = week.tint_on(i) %}{% if t.starts_on(i) %}
+            <span class="tint-chip" style="--c: {{ t.swatch }}">{{ t.label }}</span>
+            {% endif %}{% endif %}
+          </div>
+          {% endfor %}
+        </div>
+
+        <div class="row allday-row" style="--lanes: {{ week.lane_count() }}">
+          <div class="gutter label">All day</div>
+          {% for l in week.lanes() %}
+          <div class="allday tone-{{ l.item.tone.class() }}{% if l.multi_day() %} multi-day{% endif %}"
+               style="grid-column: {{ l.grid_start() }} / {{ l.grid_end() }}; grid-row: {{ l.grid_row() }}">
+            {{ l.item.title }}
+          </div>
+          {% endfor %}
+        </div>
+
+        <div class="row body">
+          {% for t in week.tints.iter() %}
+          <canvas class="tint" aria-hidden="true"
+                  style="grid-column: {{ t.grid_start() }} / {{ t.grid_end() }}"
+                  data-shader="/static/shaders/{{ piece.shader }}"
+                  data-palette="{{ t.palette_attr() }}"
+                  data-time-offset="{{ loop.index0 * 23 }}"></canvas>
+          {% endfor %}
+
+          <div class="gutter hours">
+            {% for (label, top) in week.hours() %}
+            <span class="label" style="top: {{ "{:.3}"|format(top) }}%">{{ label }}</span>
+            {% endfor %}
+          </div>
+
+          <div class="now-line-faint" style="top: {{ "{:.3}"|format(week.now_top()) }}%"><span class="label">{{ week.now_clock() }}</span></div>
+
+          {% for (i, day) in week.days.iter().enumerate() %}
+          <div class="day-col{% if week.is_today(i) %} today{% endif %}" style="grid-column: {{ i + 2 }}" aria-label="{{ day.name }} {{ day.date }}">
+            {% for p in week.placed(i) %}
+            <article class="event tone-{{ p.event.tone.class() }}{% if week.is_current(p.event) %} is-now{% endif %}"
+                     style="top: {{ "{:.3}"|format(p.top()) }}%; height: {{ "{:.3}"|format(p.height()) }}%; left: {{ "{:.3}"|format(p.left()) }}%; width: {{ "{:.3}"|format(p.width()) }}%">
+              <h3>{{ p.event.title }}</h3>
+              {% if week.is_current(p.event) %}<span class="now-badge">Now</span>{% endif %}
+              <p class="meta">{{ p.span() }}{% if !p.event.place.is_empty() %} · {{ p.event.place }}{% endif %}</p>
+            </article>
+            {% endfor %}
+
+            {% for t in week.todos_on(i) %}
+            <div class="todo{% if t.done %} done{% endif %}" style="top: {{ "{:.3}"|format(t.top()) }}%">
+              <span class="check" aria-hidden="true"></span>
+              <span class="title">{{ t.title }}</span>
+              <span class="due label">{{ t.due_clock() }}</span>
+            </div>
+            {% endfor %}
+
+            {% if week.is_today(i) %}
+            <div class="now-line" style="top: {{ "{:.3}"|format(week.now_top()) }}%"></div>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <aside class="side">
+    <section class="month">
+      <h2>November 2026</h2>
+      <ol class="mini">
+        {% for d in ["M", "T", "W", "T", "F", "S", "S"] %}<li class="label">{{ d }}</li>{% endfor %}
+        {% for _ in 0..6 %}<li></li>{% endfor %}
+        {% for d in 1..=30 %}
+        <li class="{% if d >= 9 && d <= 15 %}in-week{% endif %}{% if d == 11 %} today{% endif %}">{{ d }}</li>
+        {% endfor %}
+      </ol>
+    </section>
+
+    <section class="someday">
+      <header>
+        <h2>Sometime this week</h2>
+        <span class="count">{{ week.open_somedays() }}</span>
+      </header>
+      <p class="hint">No day yet. Drag one onto the week when it fits.</p>
+      <ul>
+        {% for s in week.someday.iter() %}
+        <li class="someday-item tone-{{ s.tone.class() }}{% if s.todo %} is-todo{% else %} is-event{% endif %}">
+          <span class="grip" aria-hidden="true"></span>
+          {% if s.todo %}<span class="check" aria-hidden="true"></span>{% else %}<span class="bar" aria-hidden="true"></span>{% endif %}
+          <span class="title">{{ s.title }}</span>
+          {% if !s.detail.is_empty() %}<span class="detail">{{ s.detail }}</span>{% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+    </section>
+
+    <section class="legend">
+      <h2>Key</h2>
+      <ul>
+        <li><span class="k k-event"></span>Event: a block of time</li>
+        <li><span class="k k-todo"></span>Todo: done by a point in time</li>
+        {% for t in week.tints.iter() %}
+        <li><span class="k k-tint" style="--c: {{ t.swatch }}"></span>{{ t.label }}</li>
+        {% endfor %}
+        <li><span class="k k-now"></span>Where you are now</li>
+      </ul>
+    </section>
+  </aside>
+</div>
+<script src="/static/js/stage.js" defer></script>
+{% endblock %}

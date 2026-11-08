@@ -1,6 +1,8 @@
 //! The registry of showcase pieces. Add a piece by appending to [`PIECES`]
 //! and dropping its fragment shader into `static/shaders/`.
 
+use crate::calendar::{WEEK, Week};
+
 /// One colorway for a card piece. The shader reads the colors in order as
 /// base, soft, primary, accent and secondary.
 #[derive(Debug, Clone, Copy)]
@@ -17,7 +19,18 @@ impl Card {
     }
 }
 
-/// One showcase piece: a full-screen fragment shader with a short caption.
+/// How a piece is laid out on its page.
+#[derive(Debug, Clone, Copy)]
+pub enum Layout {
+    /// One canvas filling the window.
+    Fullscreen,
+    /// One small canvas per card.
+    Cards(&'static [Card]),
+    /// An app mockup: a calendar week, with the shader behind tinted days.
+    Calendar(&'static Week),
+}
+
+/// One showcase piece: a fragment shader, a layout and a short caption.
 #[derive(Debug, Clone, Copy)]
 pub struct Piece {
     pub slug: &'static str,
@@ -25,8 +38,18 @@ pub struct Piece {
     pub blurb: &'static str,
     /// File name inside `static/shaders/`.
     pub shader: &'static str,
-    /// Empty for a full-screen piece; otherwise one small canvas per card.
-    pub cards: &'static [Card],
+    pub layout: Layout,
+}
+
+impl Piece {
+    /// The piece's cards, empty unless it is a card piece.
+    #[must_use]
+    pub const fn cards(&self) -> &'static [Card] {
+        match self.layout {
+            Layout::Cards(cards) => cards,
+            _ => &[],
+        }
+    }
 }
 
 pub const PIECES: &[Piece] = &[
@@ -36,7 +59,7 @@ pub const PIECES: &[Piece] = &[
         blurb: "Domain-warped gradients that drift like ink in water, \
                 developed onto a worn reel of 35mm stock.",
         shader: "fluid-grain.frag",
-        cards: &[],
+        layout: Layout::Fullscreen,
     },
     Piece {
         slug: "colorways",
@@ -44,7 +67,15 @@ pub const PIECES: &[Piece] = &[
         blurb: "The same fluid on film, poured six times, \
                 each card around a different primary color.",
         shader: "fluid-grain.frag",
-        cards: &COLORWAYS,
+        layout: Layout::Cards(&COLORWAYS),
+    },
+    Piece {
+        slug: "calendar",
+        title: "A week, on paper",
+        blurb: "A calendar mockup: crisp events and todos on a paper week, \
+                with unusual days washed in grainy fluid color.",
+        shader: "fluid-grain.frag",
+        layout: Layout::Calendar(&WEEK),
     },
 ];
 

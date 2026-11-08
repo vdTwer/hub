@@ -1,5 +1,8 @@
 use axum::{body::Body, http::Request, http::StatusCode};
-use design_showcase::{app, pieces::PIECES};
+use design_showcase::{
+    app,
+    pieces::{PIECES, Piece},
+};
 use http_body_util::BodyExt;
 use tower::ServiceExt;
 
@@ -61,11 +64,11 @@ async fn stage_script_is_served() {
 
 #[tokio::test]
 async fn card_pieces_render_one_canvas_per_card() {
-    for piece in PIECES.iter().filter(|p| !p.cards.is_empty()) {
+    for piece in PIECES.iter().filter(|p| !p.cards().is_empty()) {
         let (status, body) = get(&format!("/p/{}", piece.slug)).await;
         assert_eq!(status, StatusCode::OK);
-        assert_eq!(body.matches("data-palette=").count(), piece.cards.len());
-        for card in piece.cards {
+        assert_eq!(body.matches("data-palette=").count(), piece.cards().len());
+        for card in piece.cards() {
             assert!(body.contains(card.name), "{}", card.name);
             assert!(body.contains(&card.palette.join(",")), "{}", card.name);
         }
@@ -74,7 +77,7 @@ async fn card_pieces_render_one_canvas_per_card() {
 
 #[test]
 fn palettes_are_five_hex_colors() {
-    for card in PIECES.iter().flat_map(|p| p.cards) {
+    for card in PIECES.iter().flat_map(Piece::cards) {
         for color in card.palette {
             let hex = color.strip_prefix('#').unwrap_or_default();
             assert!(
@@ -83,5 +86,23 @@ fn palettes_are_five_hex_colors() {
                 card.name
             );
         }
+    }
+}
+
+#[tokio::test]
+async fn calendar_shows_every_feature() {
+    let (status, body) = get("/p/calendar").await;
+    assert_eq!(status, StatusCode::OK);
+    for needle in [
+        "class=\"allday",
+        "multi-day",
+        "class=\"event",
+        "class=\"todo",
+        "Sometime this week",
+        "data-palette=",
+        "now-line",
+        "is-now",
+    ] {
+        assert!(body.contains(needle), "missing {needle}");
     }
 }

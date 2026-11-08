@@ -9,7 +9,7 @@
   <button id="film" class="label" type="button" aria-pressed="true">Film: on</button>
 </header>
 <ul class="card-grid">
-  {% for card in piece.cards %}
+  {% for card in cards %}
   <li class="card">
     <canvas data-shader="/static/shaders/{{ piece.shader }}"
             data-palette="{{ card.palette.join(",") }}"

@@ -11,7 +11,8 @@ use axum::{
     response::{Html, IntoResponse, Response},
     routing::get,
 };
-use pieces::{PIECES, Piece};
+use calendar::Week;
+use pieces::{Card, Layout, PIECES, Piece};
 use tower_http::services::ServeDir;
 
 #[derive(Template)]
@@ -30,6 +31,14 @@ struct PiecePage {
 #[template(path = "cards.html")]
 struct CardsPage {
     piece: &'static Piece,
+    cards: &'static [Card],
+}
+
+#[derive(Template)]
+#[template(path = "calendar.html")]
+struct CalendarPage {
+    piece: &'static Piece,
+    week: &'static Week,
 }
 
 fn render(template: &impl Template) -> Response {
@@ -49,12 +58,10 @@ async fn index() -> Response {
 async fn piece(Path(slug): Path<String>) -> Response {
     pieces::find(&slug).map_or_else(
         || (StatusCode::NOT_FOUND, "no such piece").into_response(),
-        |piece| {
-            if piece.cards.is_empty() {
-                render(&PiecePage { piece })
-            } else {
-                render(&CardsPage { piece })
-            }
+        |piece| match piece.layout {
+            Layout::Fullscreen => render(&PiecePage { piece }),
+            Layout::Cards(cards) => render(&CardsPage { piece, cards }),
+            Layout::Calendar(week) => render(&CalendarPage { piece, week }),
         },
     )
 }
