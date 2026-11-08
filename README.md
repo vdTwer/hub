@@ -6,7 +6,8 @@ repository collects small pieces built on that idea. Each piece is a single frag
 the look comes entirely from code, with no images, video or design files behind it.
 
 The first piece, Fluid, on film, renders soft gradients that fold into each other like dye in
-water and prints them through a subtle analog treatment of grain, gate weave and flicker.
+water and prints them through a subtle analog treatment of grain, halation, gate weave and
+flicker. Move the pointer across it, and the dye follows.
 
 Ready to try it? Jump to the [installation instructions](#installation).
 
@@ -21,7 +22,12 @@ Ready to try it? Jump to the [installation instructions](#installation).
 - Grain is regenerated at 24 frames per second, like a projector, and is strongest in the
   midtones, as on real film. It is smoothly interpolated, so it clumps like silver instead of
   buzzing like digital noise.
-- The print adds gate weave, about 2 percent exposure flicker, a soft S-curve with lifted
+- Moving the pointer or a finger stirs the fluid. The last 12 pointer samples push the dye
+  along their velocity and swirl it around their path, and the wake heals within a few seconds.
+- Halation gives highlights the warm red glow of real film, where light reflects off the film
+  base and exposes the red layer a second time. A quarter-size pre-pass and its mipmap chain
+  provide the wide blur in one extra draw call.
+- The print also adds gate weave, about 2 percent exposure flicker, a soft S-curve with lifted
   blacks, a split tone, a light vignette and the occasional speck of dust.
 - A Film button (or the F key) dissolves the analog treatment in and out, so the clean and the
   filmed image can be compared live.
@@ -29,6 +35,8 @@ Ready to try it? Jump to the [installation instructions](#installation).
 ### The showcase
 
 - Pages are rendered on the server, and one small script runs any piece's shader in WebGL2.
+- Every piece gets the pointer trail for free, and any piece that declares a `u_scene` sampler
+  gets the blurred pre-pass for glows, bloom or halation.
 - Adding a piece takes one entry in a registry and one shader file.
 - `?t=12.5` freezes time and `?film=0` starts with the film treatment off, which helps with
   stills and screenshots.
@@ -48,8 +56,10 @@ flowchart LR
 ```
 
 The server only renders pages and serves files, while all the visual work happens in one
-full-screen fragment shader per piece. Every shader receives the same three uniforms:
-`u_res`, `u_time` and `u_film`.
+full-screen fragment shader per piece. Every shader receives the same uniforms: `u_res`,
+`u_time`, `u_film` and the pointer trail in `u_stir` and `u_stirAge`. A shader that declares
+`u_scene` runs twice per frame, first with `u_pass` 0 into a small mipmapped texture, then with
+`u_pass` 1 to the screen.
 
 The server is written in Rust, the pieces in GLSL ES 3.0, and the runner in plain JavaScript.
 
