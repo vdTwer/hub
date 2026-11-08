@@ -52,7 +52,9 @@ const fn hue(category: Category) -> Tag {
     }
 }
 
-const fn plain(name: &'static str) -> Tag {
+/// A tag without a hue.
+#[must_use]
+pub const fn plain(name: &'static str) -> Tag {
     Tag { name, hue: None }
 }
 

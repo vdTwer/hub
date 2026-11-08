@@ -1,6 +1,7 @@
 //! Server-rendered showcase where sleek, modern visuals meet analog media.
 
 pub mod calendar;
+pub mod contacts;
 pub mod mail;
 pub mod pieces;
 
