@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block title %}{{ piece.title }}{% endblock %}
 {% block body_class %}paper split-page mail-page{% endblock %}
+{% block head %}<script src="/static/js/theme.js"></script>{% endblock %}
 {% block content %}
 <link rel="stylesheet" href="/static/paper.css">
 <link rel="stylesheet" href="/static/split.css">
@@ -20,6 +21,7 @@
   <symbol id="tag" viewBox="0 0 20 20"><path d="M3 3h6.8l7.4 7.4-6.8 6.8L3 9.8z"/><circle cx="6.6" cy="6.6" r="1.1"/></symbol>
   <symbol id="more" viewBox="0 0 20 20"><circle cx="5" cy="10" r=".9"/><circle cx="10" cy="10" r=".9"/><circle cx="15" cy="10" r=".9"/></symbol>
   <symbol id="clip" viewBox="0 0 20 20"><path d="m13.2 6-5.9 5.9a1.7 1.7 0 0 0 2.4 2.4l6.2-6.2a3.4 3.4 0 0 0-4.8-4.8l-6.4 6.4a5.1 5.1 0 0 0 7.2 7.2l4.8-4.8"/></symbol>
+  <symbol id="theme" viewBox="0 0 20 20"><circle cx="10" cy="10" r="6.5"/><path d="M10 3.5a6.5 6.5 0 0 1 0 13z" fill="currentColor"/></symbol>
   <symbol id="search" viewBox="0 0 20 20"><circle cx="8.8" cy="8.8" r="5.3"/><path d="m12.7 12.7 4 4"/></symbol>
   <symbol id="cal" viewBox="0 0 20 20"><path d="M3.5 5h13v11.5h-13zM3.5 8.5h13M7 3v3M13 3v3"/></symbol>
   <symbol id="chev" viewBox="0 0 20 20"><path d="m8 5 5 5-5 5"/></symbol>
@@ -50,6 +52,7 @@
         <p>{{ mail.unread() }} unread, {{ mail.today() }}</p>
       </div>
       <div class="toolbar-group">
+        <button type="button" class="icon-btn theme-toggle" title="Darkroom (D)" aria-label="Darkroom" aria-pressed="false"><svg class="sym"><use href="#theme"/></svg></button>
         <button type="button" class="icon-btn" title="Filter" aria-label="Filter"><svg class="sym"><use href="#filter"/></svg></button>
         <button type="button" class="icon-btn" title="New message" aria-label="New message"><svg class="sym"><use href="#compose"/></svg></button>
       </div>

@@ -1,10 +1,12 @@
 {% extends "base.html" %}
 {% block title %}{{ piece.title }}{% endblock %}
 {% block body_class %}paper calendar-page{% endblock %}
+{% block head %}<script src="/static/js/theme.js"></script>{% endblock %}
 {% block content %}
 <link rel="stylesheet" href="/static/paper.css">
 <link rel="stylesheet" href="/static/calendar.css">
 <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+  <symbol id="theme" viewBox="0 0 20 20"><circle cx="10" cy="10" r="6.5"/><path d="M10 3.5a6.5 6.5 0 0 1 0 13z" fill="currentColor"/></symbol>
   <symbol id="chev" viewBox="0 0 20 20"><path d="m8 5 5 5-5 5"/></symbol>
 </svg>
 <div class="page">
@@ -16,6 +18,7 @@
         <button type="button" class="btn today">Today</button>
         <button type="button" class="icon-btn" title="Next week" aria-label="Next week"><svg class="sym"><use href="#chev"/></svg></button>
       </span>
+      <button type="button" class="icon-btn theme-toggle" title="Darkroom (D)" aria-label="Darkroom" aria-pressed="false"><svg class="sym"><use href="#theme"/></svg></button>
       <span class="seg"><button type="button">Day</button><button type="button">3 Days</button><button type="button" class="active">Week</button><button type="button">Multiweek</button><button type="button">Month</button></span>
     </nav>
   </header>

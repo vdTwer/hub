@@ -67,6 +67,17 @@ async fn stage_script_is_served() {
 }
 
 #[tokio::test]
+async fn every_app_offers_the_darkroom_toggle() {
+    let (status, _) = get("/static/js/theme.js").await;
+    assert_eq!(status, StatusCode::OK);
+    for slug in ["calendar", "mail", "contacts"] {
+        let (_, body) = get(&format!("/p/{slug}")).await;
+        assert!(body.contains("/static/js/theme.js"), "{slug} lacks theme.js");
+        assert!(body.contains("theme-toggle"), "{slug} lacks the toggle");
+    }
+}
+
+#[tokio::test]
 async fn card_pieces_render_one_canvas_per_card() {
     for piece in PIECES.iter().filter(|p| !p.cards().is_empty()) {
         let (status, body) = get(&format!("/p/{}", piece.slug)).await;

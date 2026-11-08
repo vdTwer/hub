@@ -70,6 +70,15 @@
   --e-2: 0 0 0 1px var(--hair), 0 1px 2px rgba(18, 18, 22, .05), 0 10px 24px -16px rgba(18, 18, 22, .32);
   --e-3: 0 0 0 1px var(--hair), 0 2px 4px rgba(18, 18, 22, .06), 0 18px 40px -18px rgba(18, 18, 22, .4);
 
+  /* materials that change with the light */
+  --glass-tint: color-mix(in srgb, var(--surface) 52%, transparent);
+  --glass-edge: rgba(255, 255, 255, .85);
+  --mono-a: #a9a9b1;
+  --mono-b: #8c8c95;
+  --mono-ink: #fff;
+  --mine-mix: white;
+  --print-filter: none;
+
   color-scheme: light;
   background: var(--paper);
   color: var(--ink);
@@ -106,12 +115,12 @@
 
 /* glass: controls that float over the print, after Apple's Liquid Glass */
 .glass {
-  background: color-mix(in srgb, var(--surface) 52%, transparent);
+  background: var(--glass-tint);
   -webkit-backdrop-filter: blur(18px) saturate(1.6);
   backdrop-filter: blur(18px) saturate(1.6);
   box-shadow:
-    inset 0 .5px 0 rgba(255, 255, 255, .85),
-    inset 0 0 0 .5px rgba(255, 255, 255, .5),
+    inset 0 .5px 0 var(--glass-edge),
+    inset 0 0 0 .5px color-mix(in srgb, var(--glass-edge) 60%, transparent),
     0 0 0 .5px rgba(18, 18, 22, .08),
     0 6px 18px -10px rgba(18, 18, 22, .35);
 }
@@ -122,21 +131,22 @@
 /* buttons with a label */
 .btn { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 14px; border-radius: 7px; font: 600 14px/1 var(--sans); }
 .btn.prominent { background: var(--accent); color: var(--on-accent); box-shadow: 0 1px 2px rgba(18, 18, 22, .2); }
-.btn.prominent:hover { background: color-mix(in srgb, var(--accent) 88%, white); }
+.btn.prominent:hover { background: color-mix(in srgb, var(--accent) 88%, var(--paper)); }
 
 /* contact monogram: a neutral gradient disc, as on Apple platforms */
 .mono {
   display: inline-grid; place-items: center; width: 32px; height: 32px; border-radius: 50%;
-  background: linear-gradient(#a9a9b1, #8c8c95); color: #fff;
+  background: linear-gradient(var(--mono-a), var(--mono-b)); color: var(--mono-ink);
   font: 600 12.5px/1 var(--sans); letter-spacing: .02em;
 }
-.mono.mine, .mine > .mono { background: linear-gradient(color-mix(in srgb, var(--c) 62%, white), color-mix(in srgb, var(--c) 82%, white)); }
+.mono.mine, .mine > .mono { background: linear-gradient(color-mix(in srgb, var(--c) 62%, var(--mine-mix)), color-mix(in srgb, var(--c) 82%, var(--mine-mix))); }
 
 /* outlined checkbox, for things to do */
 .check { flex: none; width: 12px; height: 12px; border-radius: var(--r-sm); box-shadow: inset 0 0 0 1.5px var(--ink-3); }
 .done .check { background: var(--ink-3) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M3.2 6.2l1.8 1.8 3.8-4' fill='none' stroke='%23fff' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 10px no-repeat; box-shadow: none; }
 
 /* a still print of grainy fluid color */
+canvas.print, canvas.tint { filter: var(--print-filter); }
 canvas.print { display: block; width: 100%; height: 100%; pointer-events: none; }
 
 /* keyboard focus: a soft halo, as on macOS */
@@ -151,6 +161,43 @@ canvas.print { display: block; width: 100%; height: 100%; pointer-events: none; 
   .seg { border-radius: 9px; }
   .seg button, .icon-btn, .btn { border-radius: 8px; }
   .glass.toolbar-group { border-radius: 13px; }
+}
+
+/* Darkroom: the same paper under a safelight. Warm blacks, labels like
+   photographic paper, categories as deep fills with light ink, and prints
+   developed darker, so they glow without shouting. Chosen by data-theme on
+   the root, which theme.js sets from the system, the URL or the toggle. */
+:root[data-theme="dark"] .paper {
+  --paper: #141112;
+  --sidebar: #1a1617;
+  --surface: #211c1d;
+  --ink: #f2ece6;
+  --ink-2: #bbb2ab;
+  --ink-3: #8f8680;
+  --reading: #e4ddd6;
+  --fill-1: rgba(242, 236, 230, .05);
+  --fill-2: rgba(242, 236, 230, .08);
+  --fill-3: rgba(242, 236, 230, .13);
+  --hair: rgba(242, 236, 230, .09);
+  --line: rgba(242, 236, 230, .17);
+  --accent: #f2ece6;
+  --on-accent: #141112;
+  --ring: rgba(255, 106, 74, .5);
+  --now: #ff5a45;
+  --work: #262c58;     --work-ink: #cbd2ff;
+  --personal: #4a2a1d; --personal-ink: #ffd1b8;
+  --travel: #15403f;   --travel-ink: #b4ece5;
+  --e-1: 0 0 0 1px var(--hair), 0 1px 2px rgba(0, 0, 0, .4);
+  --e-2: 0 0 0 1px var(--hair), 0 1px 2px rgba(0, 0, 0, .4), 0 12px 28px -16px rgba(0, 0, 0, .8);
+  --e-3: 0 0 0 1px var(--hair), 0 2px 4px rgba(0, 0, 0, .45), 0 20px 44px -18px rgba(0, 0, 0, .9);
+  --glass-tint: color-mix(in srgb, var(--surface) 58%, transparent);
+  --glass-edge: rgba(255, 255, 255, .14);
+  --mono-a: #6f676c;
+  --mono-b: #565055;
+  --mono-ink: #f2ece6;
+  --mine-mix: #141112;
+  --print-filter: brightness(.5) saturate(1.35) contrast(1.05);
+  color-scheme: dark;
 }
 
 @media (prefers-reduced-transparency: reduce) {
