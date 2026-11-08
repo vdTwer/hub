@@ -18,10 +18,10 @@
         <li{% if loop.first %} class="active"{% endif %}><span>{{ f.name }}</span>{% if f.count > 0 %}<span class="n">{{ f.count }}</span>{% endif %}</li>
         {% endfor %}
       </ul>
-      <h2>Labels</h2>
-      <ul class="folders labels">
-        {% for (c, n) in mail.labels() %}
-        <li class="{{ c.class() }}"><span><i class="swatch" aria-hidden="true"></i>{{ c.label() }}</span><span class="n">{{ n }}</span></li>
+      <h2>Tags</h2>
+      <ul class="folders tags">
+        {% for (t, n) in mail.tags() %}
+        <li class="{{ t.class() }}"><span><i class="swatch" aria-hidden="true"></i>{{ t.name }}</span><span class="n">{{ n }}</span></li>
         {% endfor %}
       </ul>
     </nav>
@@ -33,7 +33,7 @@
         <h1>Inbox</h1>
         <span class="meta">{{ mail.today() }}, {{ mail.unread() }} unread</span>
       </div>
-      <label class="search"><svg aria-hidden="true"><use href="#search"/></svg><input type="search" placeholder="Search mail" aria-label="Search mail"></label>
+      <label class="search"><svg aria-hidden="true"><use href="#search"/></svg><input type="search" placeholder="Search, or combine tags" aria-label="Search mail"></label>
       <span class="seg"><button type="button" class="active">All</button><button type="button">Unread</button><button type="button">Attachments</button></span>
     </header>
     <div class="list-scroll">
@@ -47,7 +47,7 @@
           <span class="subject">{{ m.subject }}</span>
           <span class="snippet">{{ m.snippet }}</span>
           <span class="tags">
-            {% if let Some(c) = m.category %}<span class="tag {{ c.class() }}">{{ c.label() }}</span>{% endif %}
+            {% for t in m.tags.iter() %}<span class="tag {{ t.class() }}">{{ t.name }}</span>{% endfor %}
             {% if m.attachments > 0 %}<span class="clip"><svg aria-hidden="true"><use href="#clip"/></svg>{{ m.attachments }}</span>{% endif %}
             {% if let Some(r) = m.reply_by %}<span class="owe"><span class="check" aria-hidden="true"></span>{{ r }}</span>{% endif %}
           </span>
@@ -65,53 +65,104 @@
               data-palette="{{ mail.thread.palette_attr() }}"
               data-time-offset="7"></canvas>
       <div class="reader-tools">
-        <span class="seg"><button type="button">Reply</button><button type="button">Forward</button></span>
+        <span class="seg"><button type="button">Reply all</button><button type="button">Forward</button></span>
         <span class="seg"><button type="button">Snooze</button><button type="button">Archive</button></span>
       </div>
       <div class="reader-title">
-        <span class="tag">{{ mail.thread.category.label() }}</span>
         <h2>{{ mail.thread.subject }}</h2>
-        <p class="meta">{{ mail.thread.messages.len() }} messages</p>
+        <p class="meta">{{ mail.thread.messages.len() }} messages, {{ mail.span() }}</p>
+        <p class="thread-tags">
+          {% for t in mail.open_mail().tags.iter() %}<span class="tag {{ t.class() }}">{{ t.name }}</span>{% endfor %}
+          <button type="button" class="add-tag">+ Tag</button>
+        </p>
       </div>
     </header>
 
-    <ol class="messages">
-      {% for msg in mail.thread.folded() %}
-      <li class="folded" title="{{ msg.gist() }}">
-        <span class="who">{{ msg.from }}</span>
-        <span class="gist">{{ msg.gist() }}</span>
-        <time>{{ mail.when(msg.stamp) }}</time>
-      </li>
-      {% endfor %}
-      {% for msg in mail.thread.expanded() %}
-      <li class="message{% if msg.from == "You" %} mine{% endif %}">
-        <header>
-          <span class="mono" aria-hidden="true">{{ msg.initials() }}</span>
-          <span class="who">{{ msg.from }}<span class="to">to {{ msg.to }}</span></span>
-          <time>{{ mail.when_long(msg.stamp) }}</time>
-        </header>
-        <div class="body">
-          {% for para in msg.body.iter() %}<p>{{ para }}</p>{% endfor %}
-        </div>
-        {% if !msg.attachments.is_empty() %}
-        <ul class="files">
-          {% for a in msg.attachments.iter() %}
-          <li><svg aria-hidden="true"><use href="#clip"/></svg><span class="name">{{ a.name }}</span><span class="size">{{ a.size }}</span></li>
+    <div class="reader-body">
+      <div class="conversation">
+        <ol class="messages">
+          {% for part in mail.thread.parts() %}
+          {% match part %}
+          {% when Part::Folded(msg) %}
+          <li class="folded{% if msg.is_mine() %} mine{% endif %}" title="{{ msg.gist() }}">
+            <span class="mono" aria-hidden="true">{{ msg.initials() }}</span>
+            <span class="who">{{ msg.from }}</span>
+            <span class="gist">{{ msg.gist() }}</span>
+            <time>{{ mail.when(msg.stamp) }}</time>
+          </li>
+          {% when Part::Stack(msgs) %}
+          <li class="stack">
+            <button type="button">
+              <span class="faces" aria-hidden="true">{% for m in msgs.iter() %}<span class="mono{% if m.is_mine() %} mine{% endif %}">{{ m.initials() }}</span>{% endfor %}</span>
+              <span class="more">{{ msgs.len() }} more messages</span>
+              {% if let (Some(a), Some(b)) = (msgs.first(), msgs.last()) %}<time>{{ mail.day(a.stamp) }} to {{ mail.day(b.stamp).to_lowercase() }}</time>{% endif %}
+            </button>
+          </li>
+          {% when Part::New(n) %}
+          <li class="new-line" role="separator"><span>{{ n }} new since you last looked</span></li>
+          {% when Part::Full(msg) %}
+          <li class="message{% if msg.is_mine() %} mine{% endif %}{% if msg.unread %} unread{% endif %}">
+            <header>
+              <span class="mono" aria-hidden="true">{{ msg.initials() }}</span>
+              <span class="who">{{ msg.from }}
+                <span class="to">{% if let Some(r) = msg.reply_to %}replying to {{ r }}{% else %}to {{ msg.to }}{% endif %}</span>
+              </span>
+              <span class="actions"><span class="seg"><button type="button">Reply</button><button type="button">Forward</button></span></span>
+              <time>{{ mail.when_long(msg.stamp) }}</time>
+            </header>
+            <div class="body">
+              {% if let Some(q) = msg.quote %}<blockquote title="{{ q }}">{{ q }}</blockquote>{% endif %}
+              {% for para in msg.body.iter() %}<p>{{ para }}</p>{% endfor %}
+            </div>
+            {% if !msg.attachments.is_empty() %}
+            <ul class="files">
+              {% for a in msg.attachments.iter() %}
+              <li><svg aria-hidden="true"><use href="#clip"/></svg><span class="name">{{ a.name }}</span><span class="size">{{ a.size }}</span></li>
+              {% endfor %}
+            </ul>
+            {% endif %}
+          </li>
+          {% endmatch %}
           {% endfor %}
-        </ul>
-        {% endif %}
-      </li>
-      {% endfor %}
-    </ol>
+        </ol>
 
-    <form class="composer" aria-label="Reply">
-      <p class="to">Reply to Ava Lindqvist, Jonas Weber and Team</p>
-      <p class="draft">{{ mail.thread.draft }}<span class="caret" aria-hidden="true"></span></p>
-      <div class="send-row">
-        <span class="saved">Draft saved</span>
-        <button type="button" class="send">Send</button>
+        <form class="composer" aria-label="Reply all">
+          <p class="to">Reply all to {% for p in mail.thread.people() %}{% if !p.is_me() %}<span class="chip">{{ p.name }}</span>{% endif %}{% endfor %}</p>
+          <p class="draft">{{ mail.thread.draft }}<span class="caret" aria-hidden="true"></span></p>
+          <div class="send-row">
+            <span class="saved">Draft saved</span>
+            <button type="button" class="send">Send</button>
+          </div>
+        </form>
       </div>
-    </form>
+
+      <aside class="context" aria-label="In this thread">
+        <section>
+          <h3>People</h3>
+          <ul class="people">
+            {% for p in mail.thread.people() %}
+            <li{% if p.is_me() %} class="mine"{% endif %}><span class="mono" aria-hidden="true">{{ p.initials() }}</span><span class="name">{{ p.name }}</span><span class="n">{{ p.messages }}</span></li>
+            {% endfor %}
+          </ul>
+        </section>
+        <section>
+          <h3>Files</h3>
+          <ul class="files stacked">
+            {% for (a, from) in mail.thread.files() %}
+            <li title="{{ a.name }}, from {{ from }}"><svg aria-hidden="true"><use href="#clip"/></svg><span class="name">{{ a.name }}</span><span class="size">{{ a.size }}</span></li>
+            {% endfor %}
+          </ul>
+        </section>
+        <section>
+          <h3>On your calendar</h3>
+          <ul class="linked">
+            {% for l in mail.thread.linked.iter() %}
+            <li class="{{ l.category.class() }}"><a href="/p/calendar"><span class="name">{{ l.title }}</span><span class="when">{{ l.when }}</span></a></li>
+            {% endfor %}
+          </ul>
+        </section>
+      </aside>
+    </div>
   </article>
 </div>
 <script src="/static/js/stage.js" defer></script>

@@ -1,5 +1,6 @@
-//! The model behind the webmail mockup: an inbox grouped by recency, and one
-//! open thread whose older messages fold into single lines.
+//! The model behind the webmail mockup: an inbox grouped by recency, sorted
+//! by composable tags rather than folders, and one open thread that folds
+//! what was read and opens what is new.
 
 use std::borrow::Borrow;
 
@@ -15,16 +16,59 @@ pub struct Stamp {
     pub at: u16,
 }
 
-/// A folder in the sidebar. `count` is what is waiting in it, if anything.
+/// A system mailbox in the sidebar. There are no user folders: people sort
+/// mail with tags, which compose. `count` is what is waiting in it.
 #[derive(Debug, Clone, Copy)]
 pub struct Folder {
     pub name: &'static str,
     pub count: u16,
 }
 
+/// A tag. Any number of them can sit on a thread and be combined in a
+/// search. A tag with a hue is one of the calendar's categories; the rest
+/// are plain.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Tag {
+    pub name: &'static str,
+    pub hue: Option<Category>,
+}
+
+impl Tag {
+    #[must_use]
+    pub const fn class(&self) -> &'static str {
+        match self.hue {
+            Some(c) => c.class(),
+            None => "plain",
+        }
+    }
+}
+
+const fn hue(category: Category) -> Tag {
+    Tag {
+        name: category.label(),
+        hue: Some(category),
+    }
+}
+
+const fn plain(name: &'static str) -> Tag {
+    Tag { name, hue: None }
+}
+
+pub const WORK: Tag = hue(Category::Work);
+pub const PERSONAL: Tag = hue(Category::Personal);
+pub const TRAVEL: Tag = hue(Category::Travel);
+pub const OFFSITE: Tag = plain("Off-site");
+pub const RECEIPTS: Tag = plain("Receipts");
+pub const FILM: Tag = plain("Film");
+pub const NEWSLETTER: Tag = plain("Newsletters");
+
+/// Every tag, in the sidebar's order: categories first.
+pub const TAGS: &[Tag] = &[WORK, PERSONAL, TRAVEL, OFFSITE, FILM, RECEIPTS, NEWSLETTER];
+
 /// One row of the message list: the newest message of a thread.
 #[derive(Debug, Clone, Copy)]
 pub struct Mail {
+    /// The people in the thread, newest sender first.
     pub from: &'static str,
     pub subject: &'static str,
     pub snippet: &'static str,
@@ -34,12 +78,12 @@ pub struct Mail {
     /// Messages in the thread; 1 for a single message.
     pub thread: u8,
     pub attachments: u8,
-    pub category: Option<Category>,
+    pub tags: &'static [Tag],
     /// A reply the user owes, and by when: an outlined tag, like a todo.
     pub reply_by: Option<&'static str>,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Attachment {
     pub name: &'static str,
     pub size: &'static str,
@@ -50,19 +94,20 @@ pub struct Message {
     pub from: &'static str,
     pub to: &'static str,
     pub stamp: Stamp,
+    /// Arrived since the thread was last read.
+    pub unread: bool,
+    /// Whose message this one answers, when it isn't simply the one above.
+    pub reply_to: Option<&'static str>,
     pub body: &'static [&'static str],
+    /// Text quoted from earlier in the thread, hidden until asked for.
+    pub quote: Option<&'static str>,
     pub attachments: &'static [Attachment],
 }
 
 impl Message {
-    /// Up to two initials, for the sender's monogram.
     #[must_use]
     pub fn initials(&self) -> String {
-        self.from
-            .split_whitespace()
-            .filter_map(|w| w.chars().next())
-            .take(2)
-            .collect()
+        initials(self.from)
     }
 
     /// The first paragraph, for a folded message.
@@ -70,32 +115,134 @@ impl Message {
     pub fn gist(&self) -> &'static str {
         self.body.first().copied().unwrap_or_default()
     }
+
+    #[must_use]
+    pub fn is_mine(&self) -> bool {
+        self.from == ME
+    }
+}
+
+/// How the user appears in a thread.
+pub const ME: &str = "You";
+
+/// Up to two initials, for a monogram.
+#[must_use]
+pub fn initials(name: &str) -> String {
+    name.split_whitespace()
+        .filter_map(|w| w.chars().next())
+        .take(2)
+        .collect()
+}
+
+/// Something in the thread that is also on the calendar.
+#[derive(Debug, Clone, Copy)]
+pub struct Linked {
+    pub title: &'static str,
+    pub when: &'static str,
+    pub category: Category,
+}
+
+/// One piece of a thread as the reader shows it.
+#[derive(Debug, Clone, Copy)]
+pub enum Part {
+    /// A read message as a single line.
+    Folded(&'static Message),
+    /// Read messages folded together behind a count.
+    Stack(&'static [Message]),
+    /// The line above the messages that arrived since the last visit.
+    New(usize),
+    /// A message in full.
+    Full(&'static Message),
+}
+
+/// Someone in the thread, and how many messages they wrote.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Person {
+    pub name: &'static str,
+    pub messages: usize,
+}
+
+impl Person {
+    #[must_use]
+    pub fn initials(&self) -> String {
+        initials(self.name)
+    }
+
+    #[must_use]
+    pub fn is_me(&self) -> bool {
+        self.name == ME
+    }
 }
 
 #[derive(Debug, Clone, Copy)]
 pub struct Thread {
     pub subject: &'static str,
+    /// The hue of the thread's print.
     pub category: Category,
     pub messages: &'static [Message],
+    pub linked: &'static [Linked],
     pub draft: &'static str,
 }
 
-/// How many of the newest messages a thread shows in full.
-const EXPANDED: usize = 2;
-
 impl Thread {
-    /// Older messages, folded into one line each.
+    /// The thread as the reader lays it out. Everything new is shown in
+    /// full, or the newest message if nothing is new. Of what was read
+    /// before, the first message and the one just before the new ones stay
+    /// as single lines, for context, and the rest fold into a stack.
     #[must_use]
-    pub fn folded(&self) -> &'static [Message] {
-        let cut = self.messages.len().saturating_sub(EXPANDED);
-        &self.messages[..cut]
+    pub fn parts(&self) -> Vec<Part> {
+        let all = self.messages;
+        let new = all.iter().filter(|m| m.unread).count();
+        let first_new = all
+            .iter()
+            .position(|m| m.unread)
+            .unwrap_or_else(|| all.len().saturating_sub(1));
+        let (read, rest) = all.split_at(first_new);
+
+        let mut parts = Vec::with_capacity(read.len().min(3) + rest.len() + 1);
+        match read {
+            [] => {}
+            [one] => parts.push(Part::Folded(one)),
+            [first, middle @ .., last] => {
+                parts.push(Part::Folded(first));
+                match middle {
+                    [] => {}
+                    [one] => parts.push(Part::Folded(one)),
+                    many => parts.push(Part::Stack(many)),
+                }
+                parts.push(Part::Folded(last));
+            }
+        }
+        if new > 0 {
+            parts.push(Part::New(new));
+        }
+        parts.extend(rest.iter().map(Part::Full));
+        parts
     }
 
-    /// The newest messages, shown in full.
+    /// Everyone who wrote, in order of their first message.
     #[must_use]
-    pub fn expanded(&self) -> &'static [Message] {
-        let cut = self.messages.len().saturating_sub(EXPANDED);
-        &self.messages[cut..]
+    pub fn people(&self) -> Vec<Person> {
+        self.messages.iter().fold(Vec::new(), |mut people, m| {
+            match people.iter_mut().find(|p: &&mut Person| p.name == m.from) {
+                Some(p) => p.messages += 1,
+                None => people.push(Person {
+                    name: m.from,
+                    messages: 1,
+                }),
+            }
+            people
+        })
+    }
+
+    /// Every file in the thread, newest first, with who sent it.
+    #[must_use]
+    pub fn files(&self) -> Vec<(&'static Attachment, &'static str)> {
+        self.messages
+            .iter()
+            .rev()
+            .flat_map(|m| m.attachments.iter().map(|a| (a, m.from)))
+            .collect()
     }
 
     /// The thread's palette, comma separated, for a still print.
@@ -132,9 +279,17 @@ impl Mailbox {
     #[must_use]
     pub fn when(&self, stamp: impl Borrow<Stamp>) -> String {
         let stamp = stamp.borrow();
-        let days = usize::from(stamp.days_ago);
-        match days {
+        match stamp.days_ago {
             0 => clock(stamp.at),
+            _ => self.day(stamp),
+        }
+    }
+
+    /// The day of a stamp: "Today", "Yesterday", a weekday or a date.
+    #[must_use]
+    pub fn day(&self, stamp: impl Borrow<Stamp>) -> String {
+        match usize::from(stamp.borrow().days_ago) {
+            0 => "Today".to_owned(),
             1 => "Yesterday".to_owned(),
             d if d <= self.weekday => WEEKDAYS[self.weekday - d].to_owned(),
             d => format!(
@@ -149,9 +304,21 @@ impl Mailbox {
     #[must_use]
     pub fn when_long(&self, stamp: impl Borrow<Stamp>) -> String {
         let stamp = stamp.borrow();
-        match stamp.days_ago {
-            0 => format!("Today, {}", clock(stamp.at)),
-            _ => format!("{}, {}", self.when(stamp), clock(stamp.at)),
+        format!("{}, {}", self.day(stamp), clock(stamp.at))
+    }
+
+    /// The days the open thread spans, such as "Mon to today".
+    #[must_use]
+    pub fn span(&self) -> String {
+        let messages = self.thread.messages;
+        let (Some(first), Some(last)) = (messages.first(), messages.last()) else {
+            return String::new();
+        };
+        let (from, to) = (self.day(first.stamp), self.day(last.stamp));
+        if from == to {
+            from
+        } else {
+            format!("{from} to {}", to.to_lowercase())
         }
     }
 
@@ -201,15 +368,17 @@ impl Mailbox {
         &self.mails[(*row.borrow()).min(self.mails.len().saturating_sub(1))]
     }
 
-    /// Threads per category, for the sidebar's labels.
+    /// The open thread's row.
     #[must_use]
-    pub fn labels(&self) -> Vec<(Category, usize)> {
-        [Category::Work, Category::Personal, Category::Travel]
-            .into_iter()
-            .map(|c| {
-                let n = self.mails.iter().filter(|m| m.category == Some(c)).count();
-                (c, n)
-            })
+    pub fn open_mail(&self) -> &'static Mail {
+        self.mail(self.open)
+    }
+
+    /// Every tag with the number of threads that carry it.
+    #[must_use]
+    pub fn tags(&self) -> Vec<(Tag, usize)> {
+        TAGS.iter()
+            .map(|&t| (t, self.mails.iter().filter(|m| m.tags.contains(&t)).count()))
             .collect()
     }
 
@@ -228,6 +397,24 @@ const fn at(days_ago: u8, hour: u16, minute: u16) -> Stamp {
     Stamp {
         days_ago,
         at: hour * 60 + minute,
+    }
+}
+
+const fn read(
+    from: &'static str,
+    to: &'static str,
+    stamp: Stamp,
+    body: &'static [&'static str],
+) -> Message {
+    Message {
+        from,
+        to,
+        stamp,
+        unread: false,
+        reply_to: None,
+        body,
+        quote: None,
+        attachments: &[],
     }
 }
 
@@ -261,20 +448,19 @@ pub const MAILBOX: Mailbox = Mailbox {
     ],
     mails: &[
         Mail {
-            from: "Ava Lindqvist",
+            from: "Jonas, Ava, Priya, me",
             subject: "Off-site in Berlin: travel and agenda",
-            snippet: "Tickets are booked. The train leaves Bonn at 7:34 on Thursday, \
-                      and we start at Factory at one.",
-            stamp: at(0, 13, 52),
+            snippet: "Booked the same train, coach 7. I'm saving you the window seat.",
+            stamp: at(0, 14, 8),
             unread: false,
             pinned: true,
-            thread: 4,
-            attachments: 2,
-            category: Some(Category::Travel),
+            thread: 7,
+            attachments: 3,
+            tags: &[TRAVEL, WORK, OFFSITE],
             reply_by: None,
         },
         Mail {
-            from: "Lena",
+            from: "Lena, me",
             subject: "Dinner on Saturday",
             snippet: "Table for eight at seven. Can you bring the projector? \
                       I want to show the old Super 8 reels.",
@@ -283,11 +469,11 @@ pub const MAILBOX: Mailbox = Mailbox {
             pinned: true,
             thread: 3,
             attachments: 0,
-            category: Some(Category::Personal),
+            tags: &[PERSONAL, FILM],
             reply_by: Some("Reply by Thu"),
         },
         Mail {
-            from: "Jonas Weber",
+            from: "Jonas Weber, me",
             subject: "Notes from Monday's 1:1",
             snippet: "Three things we agreed on, and one I still owe you: \
                       the hiring plan for Q1.",
@@ -296,7 +482,7 @@ pub const MAILBOX: Mailbox = Mailbox {
             pinned: false,
             thread: 2,
             attachments: 0,
-            category: Some(Category::Work),
+            tags: &[WORK],
             reply_by: None,
         },
         Mail {
@@ -309,7 +495,7 @@ pub const MAILBOX: Mailbox = Mailbox {
             pinned: false,
             thread: 1,
             attachments: 0,
-            category: Some(Category::Personal),
+            tags: &[PERSONAL],
             reply_by: None,
         },
         Mail {
@@ -322,7 +508,7 @@ pub const MAILBOX: Mailbox = Mailbox {
             pinned: false,
             thread: 1,
             attachments: 1,
-            category: Some(Category::Travel),
+            tags: &[TRAVEL, OFFSITE, RECEIPTS],
             reply_by: None,
         },
         Mail {
@@ -335,11 +521,11 @@ pub const MAILBOX: Mailbox = Mailbox {
             pinned: false,
             thread: 1,
             attachments: 0,
-            category: None,
+            tags: &[FILM, NEWSLETTER],
             reply_by: None,
         },
         Mail {
-            from: "Ava Lindqvist",
+            from: "Ava Lindqvist, Jonas, me",
             subject: "Release 0.3 is out",
             snippet: "Thanks, everyone. The changelog is in the wiki, \
                       and the retro is on Thursday's agenda.",
@@ -348,11 +534,11 @@ pub const MAILBOX: Mailbox = Mailbox {
             pinned: false,
             thread: 3,
             attachments: 0,
-            category: Some(Category::Work),
+            tags: &[WORK],
             reply_by: None,
         },
         Mail {
-            from: "Jonas Weber",
+            from: "Jonas Weber, me",
             subject: "Sprint planning: draft board",
             snippet: "I moved the Leptos islands work up. \
                       Could you size the review tickets?",
@@ -361,7 +547,7 @@ pub const MAILBOX: Mailbox = Mailbox {
             pinned: false,
             thread: 2,
             attachments: 1,
-            category: Some(Category::Work),
+            tags: &[WORK],
             reply_by: Some("Reply by Fri"),
         },
         Mail {
@@ -374,11 +560,11 @@ pub const MAILBOX: Mailbox = Mailbox {
             pinned: false,
             thread: 1,
             attachments: 3,
-            category: Some(Category::Personal),
+            tags: &[PERSONAL, FILM, RECEIPTS],
             reply_by: None,
         },
         Mail {
-            from: "Mara Okafor",
+            from: "Mara Okafor, me",
             subject: "Photos from the climb",
             snippet: "The light on the last route was unreal. \
                       I put the best ones in a shared album.",
@@ -387,7 +573,7 @@ pub const MAILBOX: Mailbox = Mailbox {
             pinned: false,
             thread: 2,
             attachments: 0,
-            category: Some(Category::Personal),
+            tags: &[PERSONAL],
             reply_by: None,
         },
     ],
@@ -396,46 +582,72 @@ pub const MAILBOX: Mailbox = Mailbox {
         subject: "Off-site in Berlin: travel and agenda",
         category: Category::Travel,
         messages: &[
-            Message {
-                from: "Ava Lindqvist",
-                to: "Team",
-                stamp: at(2, 9, 12),
-                body: &[
+            read(
+                "Ava Lindqvist",
+                "Team",
+                at(2, 9, 12),
+                &[
                     "The off-site is on: Thursday and Friday at Factory Berlin. \
-                         I'll send the agenda once the rooms are confirmed.",
+                   I'll send the agenda once the rooms are confirmed.",
                 ],
-                attachments: &[],
+            ),
+            Message {
+                reply_to: Some("Ava"),
+                ..read(
+                    "Jonas Weber",
+                    "Ava, Team",
+                    at(2, 10, 3),
+                    &["Could we start after one on Thursday? \
+                       The early trains from Bonn are always full."],
+                )
+            },
+            read(
+                "Priya Nair",
+                "Ava, Team",
+                at(2, 11, 40),
+                &["Later works for me as well. I'm coming from Hamburg, \
+                   and I'd love a room with a projector for the demos."],
+            ),
+            Message {
+                reply_to: Some("Jonas"),
+                quote: Some("Could we start after one on Thursday?"),
+                ..read(
+                    ME,
+                    "Ava, Jonas, Priya",
+                    at(1, 16, 20),
+                    &[
+                        "One works for me too. I'll take the 7:34 and work on the train.",
+                        "Should I bring the Colorways prototype for Friday's review?",
+                    ],
+                )
             },
             Message {
-                from: "Jonas Weber",
-                to: "Ava, Team",
-                stamp: at(2, 10, 3),
-                body: &["Could we start after one on Thursday? \
-                         The early trains from Bonn are always full."],
-                attachments: &[],
-            },
-            Message {
-                from: "You",
-                to: "Ava, Jonas",
-                stamp: at(1, 16, 20),
-                body: &[
-                    "One works for me too. I'll take the 7:34 and work on the train.",
-                    "Should I bring the Colorways prototype for Friday's review?",
-                ],
-                attachments: &[],
+                attachments: &[Attachment {
+                    name: "Floor plan.pdf",
+                    size: "1.2 MB",
+                }],
+                ..read(
+                    "Ava Lindqvist",
+                    "Team",
+                    at(1, 18, 5),
+                    &["Both rooms are confirmed, and both have projectors. \
+                       The floor plan is attached; we're on the third floor."],
+                )
             },
             Message {
                 from: "Ava Lindqvist",
-                to: "You, Jonas, Team",
+                to: "You, Jonas, Priya",
                 stamp: at(0, 13, 52),
+                unread: true,
+                reply_to: Some("you"),
                 body: &[
                     "Tickets are booked. The train leaves Bonn at 7:34 on Thursday, \
-                     and we start at Factory at one, so there's time for lunch.",
+                     and we start at one, so there's time for lunch.",
                     "Yes, please bring Colorways. Friday morning is for reviews, and \
                      the afternoon is free for anyone who wants to stay. The train \
                      home leaves at three.",
-                    "The itinerary and the agenda are attached. See you on Thursday!",
                 ],
+                quote: Some("Should I bring the Colorways prototype for Friday's review?"),
                 attachments: &[
                     Attachment {
                         name: "Itinerary.pdf",
@@ -447,8 +659,35 @@ pub const MAILBOX: Mailbox = Mailbox {
                     },
                 ],
             },
+            Message {
+                unread: true,
+                reply_to: Some("Ava"),
+                ..read(
+                    "Jonas Weber",
+                    "Ava, You, Priya",
+                    at(0, 14, 8),
+                    &["Booked the same train, coach 7. I'm saving you the window seat."],
+                )
+            },
         ],
-        draft: "Perfect, thanks Ava. I'll bring Colorways on a laptop and a tablet, \
+        linked: &[
+            Linked {
+                title: "Train to Berlin",
+                when: "Thu, 7:34",
+                category: Category::Travel,
+            },
+            Linked {
+                title: "Off-site workshop",
+                when: "Thu, 13:00–17:30",
+                category: Category::Work,
+            },
+            Linked {
+                title: "Train home",
+                when: "Fri, 15:00",
+                category: Category::Travel,
+            },
+        ],
+        draft: "Thank you both! I'll bring Colorways on a laptop and a tablet, \
                 so people can stir it by hand.",
     },
 };
@@ -457,8 +696,20 @@ pub const MAILBOX: Mailbox = Mailbox {
 mod tests {
     use super::*;
 
+    fn kinds(parts: &[Part]) -> Vec<String> {
+        parts
+            .iter()
+            .map(|p| match p {
+                Part::Folded(_) => "folded".to_owned(),
+                Part::Stack(m) => format!("stack {}", m.len()),
+                Part::New(n) => format!("new {n}"),
+                Part::Full(_) => "full".to_owned(),
+            })
+            .collect()
+    }
+
     #[test]
-    fn when_is_a_clock_today_and_a_day_this_week() {
+    fn when_is_a_clock_today_and_a_day_before() {
         let m = MAILBOX;
         assert_eq!(m.when(at(0, 9, 5)), "9:05");
         assert_eq!(m.when(at(1, 9, 5)), "Yesterday");
@@ -470,6 +721,19 @@ mod tests {
     fn when_long_names_the_day_and_time() {
         assert_eq!(MAILBOX.when_long(at(0, 13, 52)), "Today, 13:52");
         assert_eq!(MAILBOX.when_long(at(2, 9, 12)), "Mon, 9:12");
+    }
+
+    #[test]
+    fn span_runs_from_the_first_day_to_the_last() {
+        assert_eq!(MAILBOX.span(), "Mon to today");
+        let short = Mailbox {
+            thread: Thread {
+                messages: &MAILBOX.thread.messages[5..],
+                ..MAILBOX.thread
+            },
+            ..MAILBOX
+        };
+        assert_eq!(short.span(), "Today");
     }
 
     #[test]
@@ -487,7 +751,6 @@ mod tests {
             ]
         );
         let mut rows: Vec<usize> = groups.iter().flat_map(|g| g.rows.clone()).collect();
-        assert_eq!(rows.len(), MAILBOX.mails.len());
         rows.sort_unstable();
         rows.dedup();
         assert_eq!(rows.len(), MAILBOX.mails.len());
@@ -526,43 +789,126 @@ mod tests {
 
     #[test]
     fn the_open_row_is_the_open_thread() {
-        let row = MAILBOX.mail(MAILBOX.open);
-        assert_eq!(row.subject, MAILBOX.thread.subject);
-        assert_eq!(usize::from(row.thread), MAILBOX.thread.messages.len());
-        assert_eq!(row.category, Some(MAILBOX.thread.category));
-        let newest = MAILBOX.thread.messages.last().map(|m| m.stamp);
-        assert_eq!(newest, Some(row.stamp));
+        let row = MAILBOX.open_mail();
+        let thread = MAILBOX.thread;
+        assert_eq!(row.subject, thread.subject);
+        assert_eq!(usize::from(row.thread), thread.messages.len());
+        assert_eq!(usize::from(row.attachments), thread.files().len());
+        assert!(row.tags.iter().any(|t| t.hue == Some(thread.category)));
+        assert_eq!(thread.messages.last().map(|m| m.stamp), Some(row.stamp));
+        assert_eq!(thread.messages.last().map(Message::gist), Some(row.snippet));
     }
 
     #[test]
-    fn a_thread_folds_all_but_its_newest_two() {
-        let t = MAILBOX.thread;
-        assert_eq!(t.folded().len(), 2);
-        assert_eq!(t.expanded().len(), 2);
-        let single = Thread {
-            messages: &t.messages[..1],
-            ..t
+    fn a_thread_opens_what_is_new_and_folds_what_was_read() {
+        let parts = MAILBOX.thread.parts();
+        assert_eq!(
+            kinds(&parts),
+            ["folded", "stack 3", "folded", "new 2", "full", "full"]
+        );
+    }
+
+    #[test]
+    fn a_read_thread_opens_its_newest_message() {
+        const READ: &[Message] = &[
+            read("A", "B", at(1, 9, 0), &["one"]),
+            read("B", "A", at(1, 10, 0), &["two"]),
+            read("A", "B", at(0, 9, 0), &["three"]),
+        ];
+        let thread = Thread {
+            messages: READ,
+            ..MAILBOX.thread
         };
-        assert!(single.folded().is_empty());
-        assert_eq!(single.expanded().len(), 1);
+        assert_eq!(kinds(&thread.parts()), ["folded", "folded", "full"]);
+        let single = Thread {
+            messages: &READ[..1],
+            ..thread
+        };
+        assert_eq!(kinds(&single.parts()), ["full"]);
     }
 
     #[test]
-    fn labels_count_threads_per_category() {
-        let total: usize = MAILBOX.labels().iter().map(|(_, n)| n).sum();
-        let tagged = MAILBOX
-            .mails
+    fn a_lone_middle_message_stays_a_line() {
+        const FOUR: &[Message] = &[
+            read("A", "B", at(1, 9, 0), &["one"]),
+            read("B", "A", at(1, 10, 0), &["two"]),
+            read("A", "B", at(0, 9, 0), &["three"]),
+            read("B", "A", at(0, 10, 0), &["four"]),
+        ];
+        let thread = Thread {
+            messages: FOUR,
+            ..MAILBOX.thread
+        };
+        assert_eq!(
+            kinds(&thread.parts()),
+            ["folded", "folded", "folded", "full"]
+        );
+    }
+
+    #[test]
+    fn every_message_appears_exactly_once() {
+        let shown: usize = MAILBOX
+            .thread
+            .parts()
             .iter()
-            .filter(|m| m.category.is_some())
-            .count();
-        assert_eq!(total, tagged);
+            .map(|p| match p {
+                Part::Stack(m) => m.len(),
+                Part::New(_) => 0,
+                Part::Folded(_) | Part::Full(_) => 1,
+            })
+            .sum();
+        assert_eq!(shown, MAILBOX.thread.messages.len());
+    }
+
+    #[test]
+    fn people_are_counted_in_order_of_appearance() {
+        let people = MAILBOX.thread.people();
+        let names: Vec<_> = people.iter().map(|p| (p.name, p.messages)).collect();
+        assert_eq!(
+            names,
+            [
+                ("Ava Lindqvist", 3),
+                ("Jonas Weber", 2),
+                ("Priya Nair", 1),
+                (ME, 1)
+            ]
+        );
+        assert!(people[3].is_me());
+    }
+
+    #[test]
+    fn files_are_newest_first_with_their_sender() {
+        let files = MAILBOX.thread.files();
+        let names: Vec<_> = files.iter().map(|(a, _)| a.name).collect();
+        assert_eq!(
+            names,
+            ["Itinerary.pdf", "Agenda, Thu–Fri.pdf", "Floor plan.pdf"]
+        );
+        assert!(files.iter().all(|(_, from)| *from == "Ava Lindqvist"));
+    }
+
+    #[test]
+    fn tags_compose_and_are_counted_per_thread() {
+        let tags = MAILBOX.tags();
+        assert_eq!(tags.len(), TAGS.len());
+        let count = |t: Tag| tags.iter().find(|(x, _)| *x == t).map(|(_, n)| *n);
+        assert_eq!(count(FILM), Some(3));
+        assert_eq!(count(OFFSITE), Some(2));
+        assert!(MAILBOX.mails.iter().any(|m| m.tags.len() >= 3));
+        assert!(tags.iter().all(|(_, n)| *n > 0));
+    }
+
+    #[test]
+    fn plain_tags_have_no_hue() {
+        assert_eq!(FILM.class(), "plain");
+        assert_eq!(TRAVEL.class(), "travel");
+        assert_eq!(TRAVEL.name, "Travel");
     }
 
     #[test]
     fn initials_take_the_first_two_names() {
-        let m = MAILBOX.thread.messages[0];
-        assert_eq!(m.initials(), "AL");
-        assert_eq!(Message { from: "You", ..m }.initials(), "Y");
+        assert_eq!(initials("Ava Lindqvist"), "AL");
+        assert_eq!(initials(ME), "Y");
     }
 
     #[test]

@@ -13,7 +13,7 @@ use axum::{
     routing::get,
 };
 use calendar::Week;
-use mail::Mailbox;
+use mail::{Mailbox, Part};
 use pieces::{Card, Layout, PIECES, Piece};
 use tower_http::services::ServeDir;
 
