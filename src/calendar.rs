@@ -17,23 +17,12 @@ pub enum Category {
 }
 
 impl Category {
-    pub const ALL: [Self; 3] = [Self::Work, Self::Personal, Self::Travel];
-
     #[must_use]
     pub const fn class(self) -> &'static str {
         match self {
             Self::Work => "work",
             Self::Personal => "personal",
             Self::Travel => "travel",
-        }
-    }
-
-    #[must_use]
-    pub const fn label(self) -> &'static str {
-        match self {
-            Self::Work => "Work",
-            Self::Personal => "Personal",
-            Self::Travel => "Travel",
         }
     }
 }
@@ -361,11 +350,6 @@ impl Week {
         (DAY_START / 60..DAY_END / 60)
             .map(|h| (format!("{h}:00"), percent(h * 60)))
             .collect()
-    }
-
-    #[must_use]
-    pub const fn categories(&self) -> [Category; 3] {
-        Category::ALL
     }
 
     #[must_use]
