@@ -90,14 +90,15 @@ pub struct Someday {
     pub category: Category,
 }
 
-/// A run of days that are different from the rest, drawn with a quiet
-/// tint of `swatch` behind those columns.
+/// A run of days that are different from the rest, washed in a still print
+/// of grainy fluid color drawn from `palette`. `swatch` is its label color.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Tint {
     pub first: usize,
     pub last: usize,
     pub label: &'static str,
     pub swatch: &'static str,
+    pub palette: [&'static str; 5],
 }
 
 impl Tint {
@@ -121,6 +122,12 @@ impl Tint {
     #[must_use]
     pub const fn covers(&self, day: usize) -> bool {
         self.first <= day && day <= self.last
+    }
+
+    /// The palette as the stage reads it from `data-palette`.
+    #[must_use]
+    pub fn palette_attr(&self) -> String {
+        self.palette.join(",")
     }
 }
 
@@ -703,12 +710,14 @@ pub const WEEK: Week = Week {
             last: 4,
             label: "traveling",
             swatch: "#0a8d9b",
+            palette: ["#eef8f8", "#bfeceb", "#7fd6d6", "#b9cdfc", "#a6ecd9"],
         },
         Tint {
             first: 5,
             last: 6,
             label: "offline weekend",
             swatch: "#f0a800",
+            palette: ["#fbf6ea", "#fde9b8", "#ffd27a", "#ffc2a0", "#f6dca6"],
         },
     ],
 };

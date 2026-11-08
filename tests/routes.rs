@@ -103,7 +103,8 @@ async fn calendar_shows_every_feature() {
         "class=\"event",
         "class=\"todo",
         "Sometime this week",
-        "tinted",
+        "data-palette=",
+        "data-still",
         "now-line",
         "is-now",
     ] {

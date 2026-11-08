@@ -38,6 +38,13 @@
         </div>
 
         <div class="row body">
+          {% for t in week.tints.iter() %}
+          <canvas class="tint" aria-hidden="true" data-still
+                  style="grid-column: {{ t.grid_start() }} / {{ t.grid_end() }}"
+                  data-shader="{{ piece.shader_url() }}"
+                  data-palette="{{ t.palette_attr() }}"
+                  data-time-offset="{{ 9 + loop.index0 * 23 }}"></canvas>
+          {% endfor %}
 
           <div class="hours" aria-hidden="true">
             {% for (label, top) in week.hours() %}<span style="top: {{ "{:.3}"|format(top) }}%">{{ label }}</span>{% endfor %}
@@ -45,7 +52,7 @@
           </div>
 
           {% for (i, day) in week.days.iter().enumerate() %}
-          <div class="day-col{% if let Some(t) = week.tint_on(i) %} tinted" style="--c: {{ t.swatch }}; grid-column: {{ i + 2 }}"{% else %}" style="grid-column: {{ i + 2 }}"{% endif %} aria-label="{{ day.name }} {{ day.date }}">
+          <div class="day-col" style="grid-column: {{ i + 2 }}" aria-label="{{ day.name }} {{ day.date }}">
             {% for p in week.placed(i) %}
             <article class="event {{ p.event.category.class() }}{% if p.short() %} short{% endif %}{% if week.is_current(p.event) %} is-now{% elif week.is_past(p.event) %} past{% endif %}" title="{{ p.tooltip() }}"
                      style="top: {{ "{:.3}"|format(p.top()) }}%; height: {{ "{:.3}"|format(p.height()) }}%; --depth: {{ p.depth }}">
@@ -100,4 +107,5 @@
     if (at.right > box.right) scroller.scrollLeft += at.left - box.left - gutter;
   });
 </script>
+<script src="/static/js/stage.js" defer></script>
 {% endblock %}

@@ -26,7 +26,8 @@ pub enum Layout {
     Fullscreen,
     /// One small canvas per card.
     Cards(&'static [Card]),
-    /// An app mockup: a calendar week, drawn without any shader.
+    /// An app mockup: a calendar week, with a still print of the shader
+    /// behind days that differ.
     Calendar(&'static Week),
 }
 
@@ -81,8 +82,8 @@ pub const PIECES: &[Piece] = &[
         slug: "calendar",
         title: "A week, on paper",
         blurb: "A calendar mockup: crisp events and todos on a paper week, \
-                with unusual days set apart by a quiet tint.",
-        shader: None,
+                with unusual days washed in grainy fluid color.",
+        shader: Some("fluid-grain.frag"),
         layout: Layout::Calendar(&WEEK),
     },
 ];
