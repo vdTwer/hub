@@ -17,6 +17,7 @@ precision highp float;
 uniform vec2 u_res;
 uniform float u_time;
 uniform float u_film;
+uniform float u_print;   // 1 for a still print behind UI: no lens vignette
 uniform int u_pass;
 uniform sampler2D u_scene;
 
@@ -221,7 +222,7 @@ void main() {
 
     // Vignette, as from an old lens.
     vec2 v = (gl_FragCoord.xy / u_res - 0.5) * vec2(u_res.x / minRes, u_res.y / minRes);
-    print *= mix(1.0, smoothstep(1.3, 0.3, length(v)), 0.2);
+    print *= mix(1.0, smoothstep(1.3, 0.3, length(v)), 0.2 * (1.0 - u_print));
 
     // Grain: two octaves, strongest in the midtones, slightly chromatic.
     vec2 gp = gl_FragCoord.xy / (1.35 * scale);

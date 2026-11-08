@@ -98,6 +98,7 @@ async function stage(canvas) {
 
   // Pointer trail, newest first. Positions use the shader's uv convention.
   const still = "still" in canvas.dataset;
+  gl.uniform1f(u("u_print"), still ? 1 : 0);
   const trail = [];
   let lastMove = null;
   if (!still) canvas.addEventListener("pointermove", (e) => {
