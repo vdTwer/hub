@@ -2,14 +2,14 @@
 
 Some of the nicest interfaces today pair clean, precise digital surfaces with something older: a
 gradient that moves like liquid, then looks as if it had been filmed on worn 35mm stock. This
-repository collects small pieces built on that idea. Each piece is a single fragment shader, so
-the look comes entirely from code, with no images, video or design files behind it.
+repository collects small pieces built on that idea. Most pieces are a single fragment shader,
+so the look comes entirely from code, with no images, video or design files behind it.
 
 The first piece, Fluid, on film, renders soft gradients that fold into each other like dye in
 water and prints them through a subtle analog treatment of grain, halation, gate weave and
 flicker. Move the pointer across it, and the dye follows. The second piece, Colorways, pours
 the same fluid into six cards, each built around a different primary color. The third, A week,
-on paper, is a minimal, modern calendar mockup that washes unusual days in the fluid.
+on paper, is a minimal, modern calendar mockup with no shader at all.
 
 Ready to try it? Jump to the [installation instructions](#installation).
 
@@ -45,10 +45,13 @@ Ready to try it? Jump to the [installation instructions](#installation).
 ### A week, on paper
 
 - Every mark carries information, in the spirit of Tufte. Hue encodes the calendar: cobalt for
-  work, apricot for personal and lagoon for travel, softened from the fluid's own palette so the
-  fills sit on the paper. A fluid-on-film wash marks days that differ from the rest, and red
+  work, apricot for personal and lagoon for travel, taken from the fluid's palette and deep
+  enough that text on every fill passes 7:1. A flat, static tint marks days that differ from
+  the rest, and red
   marks now.
-- Shapes share one language: squircle corners (CSS `corner-shape: squircle`, round where a
+- Type is Geist for words and Geist Mono for every number and label, so times line up and
+  read as data. Both are vendored under the OFL, with no font CDN.
+- Shapes share one language: small squircle corners (CSS `corner-shape: squircle`, round where a
   browser lacks it), a solid fill and a soft shadow, for events, all-day
   bars and undated items alike. Todos are the one outlined shape.
 - Events sit flush left in their day and leave room on the right, so the free time stays
