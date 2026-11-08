@@ -1,7 +1,9 @@
 // Minimal WebGL2 stage: every <canvas data-shader="..."> on the page draws
 // one fragment shader over its whole area. A canvas may also carry
 // data-palette="#rrggbb,..." which arrives as u_palette (vec3[5], linear
-// light) with u_paletteSize set to the number of colors.
+// light) with u_paletteSize set to the number of colors, and, where two
+// prints touch, data-palette-next, data-seam and data-blend for a second
+// palette after a narrow cross-fade (u_palette2, u_seam, u_blend).
 // Uniforms every piece may use:
 //   u_res  (vec2)  canvas size in device pixels
 //   u_time (float) seconds since start
@@ -96,6 +98,17 @@ async function stage(canvas) {
   gl.uniform3fv(u("u_palette"), palette);
   gl.uniform1i(u("u_paletteSize"), colors.length);
 
+  // Two prints that touch: a second palette after a seam, cross-faded over
+  // data-blend CSS pixels (data-palette-next, data-seam as a fraction).
+  const next = (canvas.dataset.paletteNext ?? "").split(",").filter(Boolean).slice(0, PALETTE);
+  const palette2 = new Float32Array(3 * PALETTE);
+  next.forEach((hex, i) => palette2.set(hexToLinear(hex), 3 * i));
+  gl.uniform3fv(u("u_palette2"), palette2);
+  const seam = next.length === PALETTE ? parseFloat(canvas.dataset.seam ?? "") : NaN;
+  gl.uniform1f(u("u_seam"), Number.isFinite(seam) ? seam : -1);
+  const uBlend = u("u_blend");
+  const blendPx = parseFloat(canvas.dataset.blend ?? "24") || 24;
+
   // Pointer trail, newest first. Positions use the shader's uv convention.
   const still = "still" in canvas.dataset;
   gl.uniform1f(u("u_print"), still ? 1 : 0);
@@ -157,6 +170,7 @@ async function stage(canvas) {
     const dpr = Math.min(devicePixelRatio || 1, 2);
     canvas.width = Math.max(1, Math.round(canvas.clientWidth * dpr));
     canvas.height = Math.max(1, Math.round(canvas.clientHeight * dpr));
+    gl.uniform1f(uBlend, blendPx / Math.max(1, canvas.clientWidth));
     makeScene();
   };
   new ResizeObserver(resize).observe(canvas);

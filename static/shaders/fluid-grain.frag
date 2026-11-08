@@ -32,6 +32,14 @@ uniform float u_stirAge[STIR];
 uniform vec3 u_palette[5];
 uniform int u_paletteSize;
 
+// Optional second colorway after a vertical seam, for two prints that touch:
+// u_seam is where it sits and u_blend how wide the cross-fade is, both as
+// fractions of the width. The fluid itself runs on unbroken; only its colors
+// change. A negative u_seam means there is no seam.
+uniform vec3 u_palette2[5];
+uniform float u_seam;
+uniform float u_blend;
+
 out vec4 fragColor;
 
 // ---------------------------------------------------------------- hashing
@@ -100,6 +108,17 @@ vec2 stir(vec2 uv) {
     return offset;
 }
 
+// Colors the warped field with a palette: base, soft, primary, accent and
+// secondary, in linear light.
+vec3 paint(vec3 pal[5], float f, vec2 q, vec2 r) {
+    vec3 col = mix(pal[0], pal[1], 0.9 * smoothstep(-0.3, 0.4, f));
+    col = mix(col, pal[4], 0.9 * smoothstep(-0.1, 0.55, q.y - 0.4 * r.x));
+    col = mix(col, pal[2], smoothstep(0.0, 0.7, r.x + 0.35 * f));
+    col = mix(col, pal[3], 0.95 * smoothstep(0.05, 0.7, -r.y + 0.5 * q.x));
+    col = mix(col, pal[0], 0.5 * smoothstep(0.3, 0.95, -f - 0.5 * q.y));
+    return col;
+}
+
 // The clean image, in linear light.
 vec3 fluid(vec2 uv, float t) {
     vec2 p = (uv - stir(uv)) * 0.7;
@@ -111,24 +130,20 @@ vec3 fluid(vec2 uv, float t) {
                   fbm(p + 1.25 * q + vec2(8.3, 2.8) - 0.06 * t));
     float f = fbm(p + 1.1 * r + 0.03 * t);
 
-    vec3 paper   = srgbToLinear(vec3(0.94, 0.93, 0.95));
-    vec3 lilac   = srgbToLinear(vec3(0.72, 0.62, 0.98));
-    vec3 cobalt  = srgbToLinear(vec3(0.16, 0.27, 0.85));
-    vec3 apricot = srgbToLinear(vec3(1.00, 0.60, 0.36));
-    vec3 lagoon  = srgbToLinear(vec3(0.20, 0.72, 0.78));
-    if (u_paletteSize == 5) {
-        paper = u_palette[0];
-        lilac = u_palette[1];
-        cobalt = u_palette[2];
-        apricot = u_palette[3];
-        lagoon = u_palette[4];
-    }
+    vec3 pal[5] = vec3[5](
+        srgbToLinear(vec3(0.94, 0.93, 0.95)),  // paper
+        srgbToLinear(vec3(0.72, 0.62, 0.98)),  // lilac
+        srgbToLinear(vec3(0.16, 0.27, 0.85)),  // cobalt
+        srgbToLinear(vec3(1.00, 0.60, 0.36)),  // apricot
+        srgbToLinear(vec3(0.20, 0.72, 0.78))); // lagoon
+    if (u_paletteSize == 5) pal = u_palette;
 
-    vec3 col = mix(paper, lilac, 0.9 * smoothstep(-0.3, 0.4, f));
-    col = mix(col, lagoon, 0.9 * smoothstep(-0.1, 0.55, q.y - 0.4 * r.x));
-    col = mix(col, cobalt, smoothstep(0.0, 0.7, r.x + 0.35 * f));
-    col = mix(col, apricot, 0.95 * smoothstep(0.05, 0.7, -r.y + 0.5 * q.x));
-    col = mix(col, paper, 0.5 * smoothstep(0.3, 0.95, -f - 0.5 * q.y));
+    vec3 col = paint(pal, f, q, r);
+    if (u_seam >= 0.0) {
+        float x = gl_FragCoord.x / u_res.x;
+        float t = smoothstep(-0.5, 0.5, (x - u_seam) / max(u_blend, 1e-4));
+        col = mix(col, paint(u_palette2, f, q, r), t);
+    }
     return col;
 }
 
