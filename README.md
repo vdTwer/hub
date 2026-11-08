@@ -7,7 +7,8 @@ the look comes entirely from code, with no images, video or design files behind 
 
 The first piece, Fluid, on film, renders soft gradients that fold into each other like dye in
 water and prints them through a subtle analog treatment of grain, halation, gate weave and
-flicker. Move the pointer across it, and the dye follows.
+flicker. Move the pointer across it, and the dye follows. The second piece, Colorways, pours
+the same fluid into six cards, each built around a different primary color.
 
 Ready to try it? Jump to the [installation instructions](#installation).
 
@@ -32,9 +33,19 @@ Ready to try it? Jump to the [installation instructions](#installation).
 - A Film button (or the F key) dissolves the analog treatment in and out, so the clean and the
   filmed image can be compared live.
 
+### Colorways
+
+- Six cards (Cobalt, Vermilion, Emerald, Saffron, Magenta and Lagoon) run the same shader with
+  their own five-color palette: base, soft, primary, accent and secondary.
+- Each card starts at a different point in time, so no two show the same shapes, and each one
+  can be stirred on its own.
+- Labels sit on frosted glass, and one Film button switches the treatment on every card at once.
+
 ### The showcase
 
 - Pages are rendered on the server, and one small script runs any piece's shader in WebGL2.
+- The stage runs every `canvas[data-shader]` on a page, pauses canvases that are off screen, and
+  passes `data-palette` colors to the shader as `u_palette`.
 - Every piece gets the pointer trail for free, and any piece that declares a `u_scene` sampler
   gets the blurred pre-pass for glows, bloom or halation.
 - Adding a piece takes one entry in a registry and one shader file.
@@ -69,7 +80,8 @@ The server is written in Rust, the pieces in GLSL ES 3.0, and the runner in plai
 - [Tokio](https://tokio.rs) as the runtime
 
 Clippy runs with the `pedantic` and `nursery` groups, and `unwrap`, `expect` and `panic` are
-denied. Four route tests check that every piece has a page and a valid shader:
+denied. Six tests check that every piece has a page and a valid shader, that card pieces render one
+canvas per card, and that every palette holds valid hex colors:
 
 ```sh
 cargo test
@@ -99,7 +111,8 @@ a checkout.
 1. Write a fragment shader that starts with `#version 300 es` and save it in
    `static/shaders/`.
 2. Add an entry with its slug, title, blurb and shader file name to `PIECES` in
-   `src/pieces.rs`.
+   `src/pieces.rs`. Leave `cards` empty for a full-screen piece, or list cards with their
+   palettes to get a card grid.
 3. Run `cargo test` and open `/p/<slug>`.
 
 ## License
