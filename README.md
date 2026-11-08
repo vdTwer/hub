@@ -10,8 +10,9 @@ water and prints them through a subtle analog treatment of grain, halation, gate
 flicker. Move the pointer across it, and the dye follows. The second piece, Colorways, pours
 the same fluid into six cards, each built around a different primary color. The third, A week,
 on paper, is a minimal, modern calendar mockup that washes its unusual days in still prints of
-the same grainy fluid. The fourth, An inbox, on paper, carries that language into webmail, and the fifth, People, on paper, gathers the
-people behind both. All three apps also come in Darkroom, a dark theme that develops the prints
+the same grainy fluid. The fourth, An inbox, on paper, carries that language into webmail, the fifth, People, on paper, gathers the
+people behind both, and the sixth, A graph, on paper, draws everything the three apps know about
+each other as one graph. All three apps also come in Darkroom, a dark theme that develops the prints
 under a safelight.
 
 Ready to try it? Jump to the [installation instructions](#installation).
@@ -119,6 +120,24 @@ Ready to try it? Jump to the [installation instructions](#installation).
   apps stay in step.
 - The model is in Rust and covered by eight unit tests.
 
+### A graph, on paper
+
+- People, threads and plans become one graph, after Obsidian's graph view. People are monogram
+  discs that grow with their links, threads are paper slips, and plans are chips in their hue.
+- Links are found, not stored: a person links to the threads and plans that name them, a thread
+  links to the plans it made, and two people who share a circle such as Climbing or Film are
+  joined by a dashed line.
+- Color still means category. Under each cluster, a still print of the grainy fluid pools in
+  that category's hue, masked to the nodes that carry it, so the work, personal and travel
+  neighborhoods read at a glance.
+- The layout is a spring embedder in Rust that starts from a sunflower spiral, so it lands the
+  same way on every visit and needs no script.
+- Hovering a node lights its neighborhood and quiets the rest, a click opens it in a glass
+  inspector that lists its links and leads to the app that owns it, a drag moves a node with its
+  links, and the toolbar hides a kind of node.
+- The model is covered by nine unit tests, including that linked nodes sit closer than strangers
+  and that no two nodes collide.
+
 ### Darkroom
 
 - Every app has a dark theme: the same paper under a safelight. Blacks are warm, labels have the
@@ -169,7 +188,7 @@ The server is written in Rust, the pieces in GLSL ES 3.0, and the runner in plai
 - [Tokio](https://tokio.rs) as the runtime
 
 Clippy runs with the `pedantic` and `nursery` groups, and `unwrap`, `expect` and `panic` are
-denied. Forty-nine tests cover the calendar, mailbox and address book models and check that
+denied. Sixty tests cover the calendar, mailbox, address book and graph models and check that
 every piece has a page and a valid shader, that card pieces render one canvas per card, that
 every palette holds valid hex colors, that each app shows all of its features, and that each
 offers the Darkroom toggle:
