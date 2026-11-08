@@ -76,8 +76,12 @@ Ready to try it? Jump to the [installation instructions](#installation).
 
 ### An inbox, on paper
 
-- It shares the calendar's paper: the same type, palette, squircles and slips, all from
-  `static/paper.css`.
+- It shares the calendar's paper, a small design system in `static/paper.css` modeled on
+  Apple's Human Interface Guidelines: one type scale, a 4-point grid, label colors by emphasis,
+  three elevations, nested corners, line symbols in the manner of SF Symbols, and a graphite
+  accent, so that hue only ever means category.
+- The layout follows Apple Mail's split view: a sidebar of mailboxes and tags, a message list
+  under a title and toolbar, and the thread, whose toolbar floats over the print in glass.
 - There are no folders to file into, only the system mailboxes (Inbox, Snoozed, Drafts, Sent
   and Archive). Mail is sorted with tags, which compose: a thread can carry Travel, Work and
   Off-site at once, and a search can combine them. Category tags carry the calendar's hues,
