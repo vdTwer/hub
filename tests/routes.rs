@@ -72,7 +72,10 @@ async fn every_app_offers_the_darkroom_toggle() {
     assert_eq!(status, StatusCode::OK);
     for slug in ["calendar", "mail", "contacts"] {
         let (_, body) = get(&format!("/p/{slug}")).await;
-        assert!(body.contains("/static/js/theme.js"), "{slug} lacks theme.js");
+        assert!(
+            body.contains("/static/js/theme.js"),
+            "{slug} lacks theme.js"
+        );
         assert!(body.contains("theme-toggle"), "{slug} lacks the toggle");
     }
 }

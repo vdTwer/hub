@@ -61,6 +61,13 @@ impl Contact {
         self.name.rsplit_once(' ').map_or("", |(given, _)| given)
     }
 
+    /// Whether a text, such as an event title or a mail's senders, speaks
+    /// of this person: by first name, or by one of `also_in`.
+    #[must_use]
+    pub fn appears_in(&self, text: &str) -> bool {
+        text.contains(self.first_name()) || self.also_in.iter().any(|w| text.contains(w))
+    }
+
     #[must_use]
     pub fn palette_attr(&self) -> String {
         self.category.palette().join(",")
@@ -159,7 +166,7 @@ impl Book {
         self.mail
             .mails
             .iter()
-            .filter(|m| m.from.contains(person.first_name()))
+            .filter(|m| person.appears_in(m.from) || person.appears_in(m.subject))
             .collect()
     }
 
@@ -170,10 +177,7 @@ impl Book {
         let week = self.week;
         week.events
             .iter()
-            .filter(|e| {
-                e.title.contains(person.first_name())
-                    || person.also_in.iter().any(|w| e.title.contains(w))
-            })
+            .filter(|e| person.appears_in(e.title))
             .map(|e| Together {
                 event: e,
                 when: format!(
@@ -265,7 +269,7 @@ pub const BOOK: Book = Book {
             favorite: true,
             details: &[d("Phone", "+49 228 555 0110")],
             note: "Call on Sundays.",
-            also_in: &[],
+            also_in: &["Lena's birthday"],
         },
         Contact {
             name: "Nils Berg",
@@ -295,7 +299,7 @@ pub const BOOK: Book = Book {
             favorite: false,
             details: &[d("Email", "theo@kino.example")],
             note: "",
-            also_in: &[],
+            also_in: &["Kino"],
         },
         Contact {
             name: "Sam Adeyemi",
@@ -308,7 +312,7 @@ pub const BOOK: Book = Book {
                 d("Phone", "+49 228 555 0100"),
             ],
             note: "Books trains and rooms for the team.",
-            also_in: &["Train"],
+            also_in: &["Train", "Rail"],
         },
     ],
     open: 0,
@@ -391,6 +395,17 @@ mod tests {
         let titles: Vec<_> = mara.together().iter().map(|t| t.event.title).collect();
         assert_eq!(titles, ["Lunch with Mara", "Climbing"]);
         assert!(mara.together().iter().all(|t| t.past));
+    }
+
+    #[test]
+    fn also_in_finds_people_by_more_than_name() {
+        let theo = Book { open: 8, ..BOOK };
+        let subjects: Vec<_> = theo.threads().iter().map(|m| m.subject).collect();
+        assert_eq!(subjects, ["This week on 35mm"]);
+        let sam = Book { open: 9, ..BOOK };
+        let titles: Vec<_> = sam.together().iter().map(|t| t.event.title).collect();
+        assert_eq!(titles, ["Train to Berlin", "Train home"]);
+        assert_eq!(sam.threads().len(), 1);
     }
 
     #[test]
