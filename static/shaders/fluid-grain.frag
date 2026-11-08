@@ -7,11 +7,19 @@
 //   2. An analog print of it: 24 fps grain, gate weave, exposure flicker,
 //      a film tone curve, vignette, and the odd speck of dust.
 // u_film blends pass 2 in and out, so the two can be compared live.
+//
+// The pointer trail in u_stir lets the viewer stir the fluid.
 precision highp float;
 
 uniform vec2 u_res;
 uniform float u_time;
 uniform float u_film;
+
+// Recent pointer samples, newest first: xy position and zw velocity, both in
+// the same units as uv below. A negative age marks an unused slot.
+const int STIR = 12;
+uniform vec4 u_stir[STIR];
+uniform float u_stirAge[STIR];
 
 out vec4 fragColor;
 
@@ -62,9 +70,28 @@ float fbm(vec2 p) {
 
 vec3 srgbToLinear(vec3 c) { return pow(c, vec3(2.2)); }
 
+// How far the pointer has dragged the dye at uv. Each sample pushes along
+// its velocity and swirls around its path, then relaxes over a few seconds,
+// so a stroke leaves a wake that slowly heals.
+vec2 stir(vec2 uv) {
+    vec2 offset = vec2(0.0);
+    for (int i = 0; i < STIR; i++) {
+        float age = u_stirAge[i];
+        if (age < 0.0) continue;
+        vec2 d = uv - u_stir[i].xy;
+        vec2 vel = u_stir[i].zw;
+        float speed = length(vel);
+        if (speed > 2.5) vel *= 2.5 / speed;
+        float reach = 0.035 + 0.05 * age;            // the wake widens as it fades
+        float w = exp(-dot(d, d) / reach) * exp(-1.2 * age);
+        offset += w * (0.09 * vel + 0.18 * min(speed, 2.5) * vec2(-d.y, d.x));
+    }
+    return offset;
+}
+
 // The clean image, in linear light.
 vec3 fluid(vec2 uv, float t) {
-    vec2 p = uv * 0.7;
+    vec2 p = (uv - stir(uv)) * 0.7;
 
     // Two rounds of domain warping, each drifting at its own pace.
     vec2 q = vec2(fbm(p + vec2(0.0, 0.11 * t)),
@@ -136,6 +163,7 @@ float dust(vec2 px, uint frame, float scale) {
 void main() {
     float film = clamp(u_film, 0.0, 1.0);
     float minRes = min(u_res.x, u_res.y);
+
     float scale = max(1.0, minRes / 1000.0);   // keep grain size steady on large screens
     uint frame = uint(floor(u_time * 24.0));   // the projector runs at 24 fps
 
