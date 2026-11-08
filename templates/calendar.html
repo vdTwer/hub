@@ -5,21 +5,14 @@
 <link rel="stylesheet" href="/static/calendar.css">
 <div class="page">
   <header class="top">
-    <a class="back" href="/">Showcase</a>
     <h1>{{ week.title }}</h1>
-    <p class="now-text">
-      <span class="now"><span class="dot" aria-hidden="true"></span>{{ week.now_clock() }}</span>
-      {% if let Some(current) = week.current() %}{{ current.title }}, {{ week.minutes_left() }} more minutes.{% endif %}
-      {% if let Some(next) = week.next() %}Then {{ next.title }} at {{ next.start_clock() }}.{% endif %}
-    </p>
     <nav class="controls" aria-label="Calendar">
       <span class="seg"><button type="button" aria-label="Previous week">&lsaquo;</button><button type="button">Today</button><button type="button" aria-label="Next week">&rsaquo;</button></span>
-      <span class="seg"><button type="button">Day</button><button type="button" class="active">Week</button><button type="button">Month</button></span>
+      <span class="seg"><button type="button">Day</button><button type="button">3 Days</button><button type="button" class="active">Week</button><button type="button">Multiweek</button><button type="button">Month</button></span>
       <button id="film" class="seg-solo" type="button" aria-pressed="true">Film: on</button>
     </nav>
   </header>
 
-  <div class="layout">
     <div class="scroller">
       <div class="grid">
         <div class="row head-row">
@@ -83,10 +76,7 @@
       </div>
     </div>
 
-    <aside class="margin">
-      <p class="key">
-        {% for c in week.categories() %}<span class="{{ c.class() }}">{{ c.label() }}</span>{% endfor %}
-      </p>
+    <footer class="tray">
       <section class="someday">
         <h2>Sometime this week</h2>
         <ul>
@@ -98,8 +88,10 @@
           {% endfor %}
         </ul>
       </section>
-    </aside>
-  </div>
+      <p class="key">
+        {% for c in week.categories() %}<span class="{{ c.class() }}">{{ c.label() }}</span>{% endfor %}
+      </p>
+    </footer>
 </div>
 <script src="/static/js/stage.js" defer></script>
 {% endblock %}
