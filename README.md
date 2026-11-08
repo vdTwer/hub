@@ -10,7 +10,9 @@ water and prints them through a subtle analog treatment of grain, halation, gate
 flicker. Move the pointer across it, and the dye follows. The second piece, Colorways, pours
 the same fluid into six cards, each built around a different primary color. The third, A week,
 on paper, is a minimal, modern calendar mockup that washes its unusual days in still prints of
-the same grainy fluid. The fourth, An inbox, on paper, carries that language into webmail.
+the same grainy fluid. The fourth, An inbox, on paper, carries that language into webmail, and the fifth, People, on paper, gathers the
+people behind both. All three apps also come in Darkroom, a dark theme that develops the prints
+under a safelight.
 
 Ready to try it? Jump to the [installation instructions](#installation).
 
@@ -104,6 +106,28 @@ Ready to try it? Jump to the [installation instructions](#installation).
 - Attachments stay quiet: hairline chips under a rule at the foot of each message.
 - The model is in Rust and covered by eighteen unit tests. Like the calendar, it is a mockup.
 
+### People, on paper
+
+- The address book shares the inbox's split view: a sidebar of All Contacts, Favorites, Recents
+  and tags, an A to Z list sorted by last name, and the open card.
+- People are tagged, never filed. A card carries its category hue, which tints the print in its
+  header, while tags such as Team, Climbing or Family compose.
+- The card's toolbar floats over the print in glass: mail, call and schedule on one side,
+  favorite and edit on the other.
+- Below the details and a note, the card shows the threads this person is in and the events you
+  share this week. Both are found in the mailbox and the calendar, not stored twice, so the three
+  apps stay in step.
+- The model is in Rust and covered by eight unit tests.
+
+### Darkroom
+
+- Every app has a dark theme: the same paper under a safelight. Blacks are warm, labels have the
+  tone of photographic paper, categories become deep fills with light ink, and the prints are
+  developed darker so that they glow without glaring.
+- It is a set of token overrides in `static/paper.css`, so no component knows about it.
+- It follows the system by default. The half-filled circle in each toolbar or the D key toggles
+  it, the choice is remembered, and `?theme=dark` or `?theme=light` forces one for screenshots.
+
 ### The showcase
 
 - Pages are rendered on the server, and one small script runs any piece's shader in WebGL2.
@@ -145,9 +169,10 @@ The server is written in Rust, the pieces in GLSL ES 3.0, and the runner in plai
 - [Tokio](https://tokio.rs) as the runtime
 
 Clippy runs with the `pedantic` and `nursery` groups, and `unwrap`, `expect` and `panic` are
-denied. Thirty-nine tests cover the calendar and mailbox models and check that every piece has a page
-and a valid shader, that card pieces render one canvas per card, that every palette holds valid
-hex colors, and that the calendar and the inbox show each of their features:
+denied. Forty-nine tests cover the calendar, mailbox and address book models and check that
+every piece has a page and a valid shader, that card pieces render one canvas per card, that
+every palette holds valid hex colors, that each app shows all of its features, and that each
+offers the Darkroom toggle:
 
 ```sh
 cargo test
