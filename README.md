@@ -11,8 +11,9 @@ flicker. Move the pointer across it, and the dye follows. The second piece, Colo
 the same fluid into six cards, each built around a different primary color. The third, A week,
 on paper, is a minimal, modern calendar mockup that washes its unusual days in still prints of
 the same grainy fluid. The fourth, An inbox, on paper, carries that language into webmail, the fifth, People, on paper, gathers the
-people behind both, and the sixth, A graph, on paper, draws everything the three apps know about
-each other as one graph. All three apps also come in Darkroom, a dark theme that develops the prints
+people behind both, the sixth, A graph, on paper, draws everything the apps know about each other as
+one graph, and the seventh, Notes, on paper, writes Markdown that links to all of it. Together
+they sketch an organizing tool centered on people, with you at the center. All three apps also come in Darkroom, a dark theme that develops the prints
 under a safelight.
 
 Ready to try it? Jump to the [installation instructions](#installation).
@@ -122,21 +123,38 @@ Ready to try it? Jump to the [installation instructions](#installation).
 
 ### A graph, on paper
 
-- People, threads and plans become one graph, after Obsidian's graph view. People are monogram
-  discs that grow with their links, threads are paper slips, and plans are chips in their hue.
+- You, people, threads, plans and notes become one graph, after Obsidian's graph view. You are
+  the one graphite disc, people are monogram discs that grow with their links, threads are paper
+  slips, plans are chips in their hue, and notes are pages.
 - Links are found, not stored: a person links to the threads and plans that name them, a thread
-  links to the plans it made, and two people who share a circle such as Climbing or Film are
-  joined by a dashed line.
+  links to the plans it made, you link to the threads you wrote in, a note links to whatever it
+  names with `@`, and two people who share a circle such as Climbing or Film are joined by a
+  dashed line.
 - Color still means category. Under each cluster, a still print of the grainy fluid pools in
   that category's hue, masked to the nodes that carry it, so the work, personal and travel
   neighborhoods read at a glance.
 - The layout is a spring embedder in Rust that starts from a sunflower spiral, so it lands the
-  same way on every visit and needs no script.
+  same way on every visit and needs no script. A last pass nudges apart any two nodes whose
+  labels would overlap.
 - Hovering a node lights its neighborhood and quiets the rest, a click opens it in a glass
   inspector that lists its links and leads to the app that owns it, a drag moves a node with its
   links, and the toolbar hides a kind of node.
 - The model is covered by nine unit tests, including that linked nodes sit closer than strangers
   and that no two nodes collide.
+
+### Notes, on paper
+
+- Notes are plain CommonMark with one addition: `@` links to a person, a thread, a plan, another
+  note or you (`@me`). An `@` takes the longest title it starts, ignoring case, so
+  `@Lena's birthday dinner` is the plan while `@Lena's gift` is Lena. An `@` inside a word, as in
+  an email address, or inside code stays text.
+- In the text, a link is a chip in its hue with the mark the graph gives its kind: a disc for a
+  person, an envelope for a thread, a square for a plan and a page for a note.
+- The open note sits under a still print in its hue. A switch in glass shows the Markdown as
+  written, with its links marked, and the foot of the note lists what it links to and the notes
+  that link to it.
+- Markdown is parsed with [pulldown-cmark](https://github.com/pulldown-cmark/pulldown-cmark), and
+  the links are resolved in the same pass. The model is covered by eleven unit tests.
 
 ### Darkroom
 
@@ -184,11 +202,12 @@ The server is written in Rust, the pieces in GLSL ES 3.0, and the runner in plai
 
 - [Axum](https://github.com/tokio-rs/axum) for routing
 - [Askama](https://github.com/askama-rs/askama) for compile-time templates
+- [pulldown-cmark](https://github.com/pulldown-cmark/pulldown-cmark) for CommonMark
 - [tower-http](https://github.com/tower-rs/tower-http) to serve static files
 - [Tokio](https://tokio.rs) as the runtime
 
 Clippy runs with the `pedantic` and `nursery` groups, and `unwrap`, `expect` and `panic` are
-denied. Sixty tests cover the calendar, mailbox, address book and graph models and check that
+denied. Seventy-four tests cover the calendar, mailbox, address book, graph and notes models and check that
 every piece has a page and a valid shader, that card pieces render one canvas per card, that
 every palette holds valid hex colors, that each app shows all of its features, and that each
 offers the Darkroom toggle:
