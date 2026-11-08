@@ -1,5 +1,6 @@
 //! Server-rendered showcase where sleek, modern visuals meet analog media.
 
+pub mod calendar;
 pub mod pieces;
 
 use askama::Template;
