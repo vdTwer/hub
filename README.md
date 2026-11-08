@@ -9,7 +9,7 @@ The first piece, Fluid, on film, renders soft gradients that fold into each othe
 water and prints them through a subtle analog treatment of grain, halation, gate weave and
 flicker. Move the pointer across it, and the dye follows. The second piece, Colorways, pours
 the same fluid into six cards, each built around a different primary color. The third, A week,
-on paper, is a minimal calendar mockup in the spirit of Tufte that washes unusual days in the fluid.
+on paper, is a minimal, modern calendar mockup that washes unusual days in the fluid.
 
 Ready to try it? Jump to the [installation instructions](#installation).
 
@@ -44,17 +44,19 @@ Ready to try it? Jump to the [installation instructions](#installation).
 
 ### A week, on paper
 
-- The design follows Tufte: every mark carries information. Hue encodes the calendar (work,
+- Every mark carries information, in the spirit of Tufte. Hue encodes the calendar (work,
   personal, travel), a fluid-on-film wash marks days that differ from the rest, and red marks
-  now. There are no boxes, shadows, icons or legends beyond three colored words.
+  now.
+- Shapes share one language: a 7-pixel radius, a soft tint of the category color and a
+  3-pixel accent on the leading edge, for events, all-day bars and undated items alike. Todos
+  are outlined capsules in the same radius.
 - Overlapping events cascade like paper slips, as in Apple Calendar: a later event is indented
   and drawn on top of the ones still running.
-- All-day items are thin rules across the days they cover; multi-day ones get end ticks and
+- All-day items are bars across the days they cover; multi-day ones are a shade deeper and
   stack into as few lanes as possible.
-- Todos are points in time with a small circle, never blocks, so they read differently from
-  events at a glance. Done ones are struck through.
-- "Sometime this week" sits in the margin, like a sidenote, holding events and todos without a
-  day.
+- Todos are points in time with a checkbox, never blocks, so they read differently from events
+  at a glance. Done ones are checked and struck through.
+- "Sometime this week" sits in the margin, holding events and todos without a day.
 - "Where am I now" is a red now line on today, the time in the gutter, the current event shaded
   deeper, and one sentence under the title: what is running, how long it has left, and what is
   next.
