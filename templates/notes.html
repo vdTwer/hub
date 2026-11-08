@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% block title %}{{ piece.title }}{% endblock %}
+{% block body_class %}paper split-page notes-page{% endblock %}
+{% block head %}<script src="/static/js/theme.js"></script>{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="/static/paper.css">
+<link rel="stylesheet" href="/static/split.css">
+<link rel="stylesheet" href="/static/notes.css">
+<svg width="0" height="0" style="position: absolute" aria-hidden="true">
+  <symbol id="doc" viewBox="0 0 20 20"><path d="M5.5 3h6l3 3v11h-9z"/><path d="M11.5 3v3h3M8 10h4.5M8 13h4.5"/></symbol>
+  <symbol id="pin" viewBox="0 0 20 20"><path d="M7.5 3.5h5l-.8 4.3 2.8 2.7v1.5h-9v-1.5l2.8-2.7zM10 12v4.5"/></symbol>
+  <symbol id="mail" viewBox="0 0 20 20"><path d="M3 5h14v10.5H3z"/><path d="m3.4 5.6 6.6 5.2 6.6-5.2"/></symbol>
+  <symbol id="graph" viewBox="0 0 20 20"><circle cx="5" cy="6" r="2"/><circle cx="14.5" cy="5" r="2"/><circle cx="10" cy="14.5" r="2.4"/><path d="M6.8 6.9 8.6 12.6M12.9 6.4l-1.9 6.3M7 5.8l5.5-.6"/></symbol>
+  <symbol id="compose" viewBox="0 0 20 20"><path d="M10 4H4.5v11.5H16V10"/><path d="m14.2 3.3 2.5 2.5-6.6 6.6-3.2.7.7-3.2z"/></symbol>
+  <symbol id="more" viewBox="0 0 20 20"><circle cx="5" cy="10" r=".9" fill="currentColor"/><circle cx="10" cy="10" r=".9" fill="currentColor"/><circle cx="15" cy="10" r=".9" fill="currentColor"/></symbol>
+  <symbol id="theme" viewBox="0 0 20 20"><circle cx="10" cy="10" r="6.5"/><path d="M10 3.5a6.5 6.5 0 0 1 0 13z" fill="currentColor"/></symbol>
+  <symbol id="search" viewBox="0 0 20 20"><circle cx="8.8" cy="8.8" r="5.3"/><path d="m12.7 12.7 4 4"/></symbol>
+</svg>
+<div class="split notes-app">
+
+  <aside class="rail">
+    <nav aria-label="Notes">
+      <h2 class="section">Notes</h2>
+      <ul class="nav">
+        <li class="active" aria-current="page"><svg class="sym"><use href="#doc"/></svg><span class="name">All Notes</span><span class="n">{{ notes.notes.len() }}</span></li>
+        <li><svg class="sym"><use href="#pin"/></svg><span class="name">Pinned</span><span class="n">{{ notes.pinned() }}</span></li>
+        <li><svg class="sym"><use href="#graph"/></svg><a class="name" href="/p/graph">Graph</a></li>
+      </ul>
+      <h2 class="section">Tags</h2>
+      <ul class="nav tags">
+        {% for (t, n) in notes.tags() %}
+        <li class="{{ t.class() }}"><i class="dot" aria-hidden="true"></i><span class="name">{{ t.name }}</span><span class="n">{{ n }}</span></li>
+        {% endfor %}
+      </ul>
+    </nav>
+  </aside>
+
+  <section class="list" aria-label="All notes">
+    <header class="list-bar">
+      <div class="titles">
+        <h1>Notes</h1>
+        <p>{{ notes.notes.len() }} notes, {{ notes.pinned() }} pinned</p>
+      </div>
+      <div class="toolbar-group">
+        <button type="button" class="icon-btn theme-toggle" title="Darkroom (D)" aria-label="Darkroom" aria-pressed="false"><svg class="sym"><use href="#theme"/></svg></button>
+        <button type="button" class="icon-btn" title="New note" aria-label="New note"><svg class="sym"><use href="#compose"/></svg></button>
+      </div>
+    </header>
+    <div class="list-tools">
+      <label class="search"><svg class="sym" aria-hidden="true"><use href="#search"/></svg><input type="search" placeholder="Search, or @ someone" aria-label="Search notes"></label>
+    </div>
+    <div class="list-scroll">
+      {% for (heading, rows) in notes.groups() %}
+      <h2 class="group">{{ heading }}</h2>
+      <ol class="rows">
+        {% for i in rows.iter().copied() %}{% let n = notes.note(i) %}
+        <li class="note-row{% if notes.is_open(i) %} open{% endif %}" data-note="n{{ i }}">
+          <a href="#n{{ i }}">
+            <span class="title">{{ n.title }}</span>
+            <time>{{ notes.when(i) }}</time>
+            <span class="snippet">{{ notes.snippet(i) }}</span>
+            <span class="tags">{% for t in n.tags.iter() %}<span class="tag {{ t.class() }}">{{ t.name }}</span>{% endfor %}</span>
+          </a>
+        </li>
+        {% endfor %}
+      </ol>
+      {% endfor %}
+    </div>
+  </section>
+
+  <div class="reader">
+    {% for i in 0..notes.notes.len() %}{% let n = notes.note(i) %}
+    <article class="note-view {{ n.hue() }}{% if notes.is_open(i) %} open{% endif %}" id="n{{ i }}" aria-label="{{ n.title }}">
+      <header class="print-head">
+        <canvas class="print" aria-hidden="true" data-still
+                data-shader="{{ piece.shader_url() }}"
+                data-palette="{{ notes.palette_attr(i) }}"
+                data-time-offset="{{ 30 + i * 17 }}"></canvas>
+        <div class="print-bar">
+          <div class="glass toolbar-group view-switch" role="radiogroup" aria-label="View">
+            <label><input type="radio" name="view-{{ i }}" value="read" checked><span>Read</span></label>
+            <label><input type="radio" name="view-{{ i }}" value="source" class="show-source"><span>Markdown</span></label>
+          </div>
+          <div class="glass toolbar-group">
+            <button type="button" class="icon-btn" title="{% if n.pinned %}Unpin{% else %}Pin{% endif %}" aria-label="Pin" aria-pressed="{{ n.pinned }}"><svg class="sym"><use href="#pin"/></svg></button>
+            <a class="icon-btn" href="/p/graph" title="Show in the graph" aria-label="Show in the graph"><svg class="sym"><use href="#graph"/></svg></a>
+            <button type="button" class="icon-btn" title="More" aria-label="More"><svg class="sym"><use href="#more"/></svg></button>
+          </div>
+        </div>
+        <div class="note-title">
+          <h2>{{ n.title }}</h2>
+          <p class="meta">Edited {{ notes.when(i) }}, {{ notes.mentions(i).len() }} links{% let back = notes.backlinks(i) %}{% if !back.is_empty() %}, linked from {{ back.len() }}{% endif %}</p>
+          <p class="note-tags">{% for t in n.tags.iter() %}<span class="tag {{ t.class() }}">{{ t.name }}</span>{% endfor %}</p>
+        </div>
+      </header>
+      <div class="note-body">
+        <div class="markdown">{{ notes.html(i)|safe }}</div>
+        <pre class="source">{{ notes.source(i)|safe }}</pre>
+
+        <footer class="note-links">
+          {% let back = notes.backlinks(i) %}
+          {% if !back.is_empty() %}
+          <h3>Linked from</h3>
+          <ul class="chips">
+            {% let from = notes.linked_from(i) %}{% for t in from.iter().copied() %}
+            <li><a class="mention note {{ notes.hue(t) }}" href="{{ notes.href(t) }}">{{ notes.mark(t)|safe }}{{ notes.title(t) }}</a></li>
+            {% endfor %}
+          </ul>
+          {% endif %}
+          {% for (kind, label, ts) in notes.link_groups(i) %}
+          <h3>{{ label }}</h3>
+          <ul class="chips">
+            {% for t in ts.iter().copied() %}
+            <li><a class="mention {{ kind }} {{ notes.hue(t) }}" href="{{ notes.href(t) }}">{{ notes.mark(t)|safe }}{{ notes.title(t) }}</a></li>
+            {% endfor %}
+          </ul>
+          {% endfor %}
+        </footer>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+</div>
+<script src="/static/js/stage.js" defer></script>
+<script src="/static/js/notes.js" defer></script>
+{% endblock %}

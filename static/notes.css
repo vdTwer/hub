@@ -1,0 +1,114 @@
+/* Notes, on paper, built on paper.css and split.css. Plain CommonMark with
+   one addition: an @ links a note to a person, a thread, a plan, another
+   note or you, and the link sits in the text as a chip in its hue, the
+   same shapes the graph draws. The open note is headed by a still print,
+   and its footer gathers what it links to and what links to it. */
+
+.split.notes-app { grid-template-columns: 216px minmax(300px, 344px) minmax(0, 1fr); }
+.nav a.name { color: inherit; text-decoration: none; }
+.me { --fill: var(--fill-3); --c: var(--ink); }
+
+/* list */
+.note-row { position: relative; }
+.note-row + .note-row::before { content: ""; position: absolute; top: 0; left: 10px; right: 10px; border-top: 1px solid var(--hair); }
+.note-row a {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 12px; row-gap: 2px;
+  padding: 10px 10px 12px; border-radius: var(--r-lg); color: var(--ink-2); text-decoration: none;
+  transition: background-color .12s;
+}
+.note-row a:hover { background: var(--fill-1); }
+.note-row .title { font: var(--t-headline); color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.note-row time { font: var(--t-subhead); color: var(--ink-3); align-self: baseline; }
+.note-row .snippet { grid-column: 1 / -1; font: var(--t-subhead); line-height: 1.4; color: var(--ink-3); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.note-row .tags { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 5px; }
+.note-row .tags:has(> *) { margin-top: 7px; }
+.note-row.open a { background: var(--surface); box-shadow: var(--e-2); }
+.note-row.open::before, .note-row.open + .note-row::before { display: none; }
+
+/* reader */
+.reader { position: relative; overflow: auto; overscroll-behavior: contain; }
+.note-view { display: none; }
+.note-view.open { display: block; }
+.view-switch { display: inline-flex; gap: 2px; }
+.view-switch label { position: relative; cursor: pointer; }
+.view-switch input { position: absolute; opacity: 0; pointer-events: none; }
+.view-switch span { display: inline-flex; align-items: center; height: 30px; padding: 0 12px; border-radius: 7px; font: 500 13.5px/1 var(--sans); color: var(--ink-2); transition: background-color .12s, color .12s; }
+.view-switch label:hover span { color: var(--ink); }
+.view-switch input:checked + span { color: var(--ink); background: var(--surface); box-shadow: 0 1px 2px rgba(0, 0, 0, .1), 0 0 0 .5px rgba(0, 0, 0, .08); }
+.view-switch input:focus-visible + span { box-shadow: 0 0 0 3px var(--ring); }
+.print-bar a.icon-btn { color: var(--c, var(--ink)); }
+
+.note-title { max-width: 720px; margin-top: 28px; }
+.note-title h2 { font: var(--t-large); letter-spacing: -0.015em; text-wrap: balance; }
+.note-title .meta { margin-top: 8px; font: var(--t-subhead); color: color-mix(in srgb, var(--c) 72%, var(--ink-3)); }
+.note-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 12px; }
+.note-tags .tag { box-shadow: 0 .5px 1px rgba(18, 18, 22, .1); }
+.note-tags .tag.plain { background: color-mix(in srgb, var(--surface) 62%, transparent); }
+
+.note-body { max-width: 760px; padding: 0 32px 56px; }
+
+/* CommonMark, set for reading */
+.markdown { max-width: 64ch; font: var(--t-reading); color: var(--reading); }
+.markdown > * + * { margin-top: .8em; }
+.markdown h1, .markdown h2 { margin-top: 1.5em; font: var(--t-title-3); color: var(--ink); }
+.markdown h3, .markdown h4 { margin-top: 1.3em; font: var(--t-headline); font-size: 16px; color: var(--ink); }
+.markdown ul, .markdown ol { padding-left: 1.4em; }
+.markdown li + li { margin-top: .3em; }
+.markdown li::marker { color: var(--ink-3); }
+.markdown strong { font-weight: 650; color: var(--ink); }
+.markdown blockquote { padding: 2px 0 2px 16px; border-left: 2px solid color-mix(in srgb, var(--c) 40%, var(--hair)); color: var(--ink-2); }
+.markdown code { padding: .1em .35em; border-radius: var(--r-sm); background: var(--fill-2); font: .88em/1 ui-monospace, "SF Mono", Menlo, monospace; }
+.markdown pre { padding: 14px 16px; border-radius: var(--radius); background: var(--fill-1); overflow: auto; }
+.markdown pre code { padding: 0; background: none; }
+.markdown a:not(.mention) { color: var(--ink); text-decoration-color: var(--line); text-underline-offset: 3px; }
+.markdown hr { border: 0; border-top: 1px solid var(--hair); }
+
+/* an @ link: a chip in its hue, with the shape the graph gives its kind */
+.mention {
+  padding: .1em .38em .12em .26em; border-radius: var(--r-sm);
+  background: var(--fill); color: var(--c); text-decoration: none;
+  font-weight: 600; white-space: nowrap;
+  transition: box-shadow .12s;
+}
+.mention > .sym, .mention > .key { display: inline-block; vertical-align: -.08em; margin-right: .3em; }
+.mention > .mono { display: inline-grid; vertical-align: middle; margin: -2px 4px 0 1px; }
+.mention:hover { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c) 40%, transparent); }
+.mention .mono { width: 12px; height: 12px; font-size: 0; box-shadow: none; }
+.mention .sym { width: .95em; height: .95em; vertical-align: -.12em; stroke-width: 1.7; }
+.mention .key { width: .6em; height: .6em; vertical-align: 0; }
+.mention.plain { --fill: var(--fill-2); --c: var(--ink-2); }
+.mention.me .mono, .mention.me + .mono { background: var(--accent); color: var(--on-accent); }
+.key { display: inline-block; flex: none; }
+.key.plan { border-radius: 2px; background: color-mix(in srgb, var(--c) 55%, var(--fill)); }
+
+/* the Markdown view: the source as written, its @ links marked */
+.note-view .source { display: none; }
+.note-view:has(.show-source:checked) .markdown { display: none; }
+.note-view:has(.show-source:checked) .source { display: block; }
+.source {
+  margin: 0; padding: 20px 24px; border-radius: var(--r-lg); background: var(--surface); box-shadow: var(--e-1);
+  font: 13.5px/1.7 ui-monospace, "SF Mono", Menlo, monospace; color: var(--ink-2);
+  white-space: pre-wrap; overflow-wrap: anywhere;
+}
+.source .at { padding: 1px 2px; border-radius: 3px; background: var(--fill); color: var(--c); font-weight: 600; }
+.source .at.plain { background: var(--fill-2); color: var(--ink); }
+
+/* what the note links to, and what links to it */
+.note-links { margin-top: 44px; padding-top: 6px; box-shadow: inset 0 1px 0 var(--hair); }
+.note-links h3 { margin: 16px 0 8px; font: var(--t-caption); color: var(--ink-3); }
+.chips { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; font: var(--t-callout); }
+.chips .mention { display: inline-flex; align-items: center; height: 26px; padding: 0 9px 0 4px; gap: 6px; font-weight: 500; }
+.chips .mention > * { margin-right: 0; }
+.chips .mention .mono { width: 18px; height: 18px; font-size: 8px; }
+.chips .mention .sym { width: 15px; height: 15px; }
+.chips .mention .key { width: 9px; height: 9px; margin: 0 3px; }
+
+@supports (corner-shape: squircle) {
+  .note-row a, .mention, .source, .markdown code, .view-switch span { corner-shape: squircle; }
+  .view-switch span { border-radius: 8px; }
+}
+
+@media (max-width: 760px) {
+  .note-body { padding: 0 16px 40px; }
+  .note-title h2 { font: var(--t-title); }
+}
