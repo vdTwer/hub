@@ -11,6 +11,9 @@ use crate::calendar::{Category, Event, clock};
 use crate::contacts::{Book, CLIMBING, Contact, FAMILY, FILM, TEAM};
 use crate::mail::{Mail, Tag};
 
+/// The categories, each of which pools its own print under its nodes.
+pub const HUES: [Category; 3] = [Category::Work, Category::Personal, Category::Travel];
+
 /// Tags that relate two people directly. A category is too broad for that.
 const CIRCLES: &[Tag] = &[TEAM, CLIMBING, FAMILY, FILM];
 
@@ -255,6 +258,11 @@ impl Graph {
     }
 
     #[must_use]
+    pub fn is_focus(&self, i: impl Borrow<usize>) -> bool {
+        *i.borrow() == self.focus
+    }
+
+    #[must_use]
     pub fn count(&self, kind: impl Borrow<Kind>) -> usize {
         let kind = *kind.borrow();
         self.nodes.iter().filter(|n| n.kind == kind).count()
@@ -324,7 +332,7 @@ impl Graph {
                     "radial-gradient(circle var(--pool) at \
                      calc(var(--fl) + (100% - var(--fl) - var(--fr)) * {:.4}) \
                      calc(var(--ft) + (100% - var(--ft) - var(--fb)) * {:.4}), \
-                     #000, rgb(0 0 0 / .4) 45%, transparent)",
+                     #000 25%, rgb(0 0 0 / .55) 60%, transparent)",
                     n.x, n.y
                 )
             })
@@ -427,7 +435,7 @@ fn settle(n: usize, edges: &[Edge]) -> Vec<(f64, f64)> {
             )
         })
         .collect();
-    let k = (ASPECT / count).sqrt() * 0.8;
+    let k = (ASPECT / count).sqrt();
 
     for step in 0..STEPS {
         let heat = 0.06f64.mul_add(1.0 - f64::from(step) / f64::from(STEPS), 0.001);
@@ -584,7 +592,7 @@ mod tests {
         for (i, a) in g.nodes.iter().enumerate() {
             for b in &g.nodes[i + 1..] {
                 let d = ((a.x - b.x) * ASPECT).hypot(a.y - b.y);
-                assert!(d > 0.05, "{} and {} at {d:.3}", a.title, b.title);
+                assert!(d > 0.07, "{} and {} at {d:.3}", a.title, b.title);
             }
         }
     }

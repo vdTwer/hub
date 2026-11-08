@@ -37,6 +37,9 @@ pub enum Layout {
     /// An app mockup: an address book, with a still print of the shader in
     /// the open person's hue.
     Contacts(&'static Book),
+    /// An app mockup: the people, threads and plans of the other apps as a
+    /// graph, with the shader pooling under each category's cluster.
+    Graph(&'static Book),
 }
 
 /// One showcase piece: a layout, a short caption and usually a shader.
@@ -109,6 +112,14 @@ pub const PIECES: &[Piece] = &[
                 and a card that finds its threads and plans in the other apps.",
         shader: Some("fluid-grain.frag"),
         layout: Layout::Contacts(&BOOK),
+    },
+    Piece {
+        slug: "graph",
+        title: "A graph, on paper",
+        blurb: "Every person, thread and plan from the other apps as one graph, \
+                with color pooling under each cluster.",
+        shader: Some("fluid-grain.frag"),
+        layout: Layout::Graph(&BOOK),
     },
 ];
 

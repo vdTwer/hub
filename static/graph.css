@@ -1,0 +1,120 @@
+/* A graph, on paper, built on paper.css. The people, threads and plans of
+   the other apps as one graph, after Obsidian's graph view: people as
+   monogram discs sized by their links, threads as paper slips, plans as
+   chips in their hue. The grainy fluid pools under each category's
+   cluster, so color still means category, and the inspector floats over
+   it in glass. A dashed link is a circle two people share. */
+
+.graph-page { --fl: 96px; --fr: 456px; --ft: 40px; --fb: 56px; --pool: 170px; }
+.graph-app { display: flex; flex-direction: column; height: 100vh; min-height: 600px; }
+
+.graph-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 20px 12px; box-shadow: inset 0 -1px 0 var(--hair); }
+.graph-bar h1 { font: var(--t-title-3); letter-spacing: -0.005em; }
+.graph-bar p { font: var(--t-subhead); color: var(--ink-3); }
+.graph-tools { display: flex; align-items: center; gap: 8px; }
+.filters button { display: inline-flex; align-items: center; gap: 7px; }
+.filters button:not(.active) { color: var(--ink-3); }
+.filters button:not(.active) .key { opacity: .45; }
+
+/* the three kinds of node, small, for keys and lists */
+.key { flex: none; display: inline-block; width: 9px; height: 9px; }
+.key.person { border-radius: 50%; background: linear-gradient(var(--mono-a), var(--mono-b)); }
+.key.thread { width: 11px; height: 8px; border-radius: 2px; background: var(--surface); box-shadow: inset 0 0 0 1.25px var(--ink-3); }
+.key.plan { border-radius: 2px; background: var(--fill-3); box-shadow: inset 0 0 0 1.25px var(--ink-3); }
+.near .key.person { background: color-mix(in srgb, var(--c) 72%, var(--mine-mix)); }
+.near .key.plan { background: var(--fill); box-shadow: inset 0 0 0 1.25px color-mix(in srgb, var(--c) 60%, transparent); }
+
+.graph-body { position: relative; flex: 1; min-height: 0; }
+.graph-scroll { position: absolute; inset: 0; overflow: auto; overscroll-behavior: contain; }
+.graph-stage { position: relative; isolation: isolate; height: 100%; min-width: 1000px; min-height: 560px; }
+.pool { position: absolute; inset: 0; z-index: -1; }
+.field { position: absolute; inset: var(--ft) var(--fr) var(--fb) var(--fl); }
+
+.edges { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.edge { stroke: var(--line); stroke-width: 1; vector-effect: non-scaling-stroke; transition: opacity .15s, stroke .15s; }
+.edge.circle { stroke-dasharray: 3 4; }
+
+.node {
+  --s: 14px;
+  position: absolute; display: grid; justify-items: center; gap: 5px; width: max-content;
+  translate: -50% calc(var(--s) / -2);
+  touch-action: none; cursor: grab;
+  transition: opacity .15s;
+}
+.node:active { cursor: grabbing; }
+.node .mono { width: var(--s); height: var(--s); font-size: calc(var(--s) * .36); box-shadow: 0 0 0 2px var(--paper), 0 3px 8px -4px rgba(18, 18, 22, .45); }
+.node.thread { --s: 22px; }
+.node .glyph { display: grid; place-items: center; width: var(--s); height: var(--s); }
+.thread .glyph { border-radius: 6px; background: var(--surface); color: var(--c); box-shadow: var(--e-1), 0 0 0 2px var(--paper); }
+.thread .glyph .sym { width: 13px; height: 13px; stroke-width: 1.6; }
+.plan .glyph { border-radius: 4px; background: var(--fill); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--c) 55%, transparent), 0 0 0 2px var(--paper); }
+.node .node-name {
+  max-width: 150px; padding: 0 5px; border-radius: var(--r-sm);
+  background: color-mix(in srgb, var(--paper) 74%, transparent);
+  font: 500 12px/1.4 var(--sans); color: var(--ink-2);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.node.person .node-name { font-weight: 600; color: var(--ink); }
+.node:hover .node-name { color: var(--ink); }
+.node.focus .mono, .node.focus .glyph { outline: 1.5px solid var(--ink); outline-offset: 2px; }
+.node.focus .node-name { background: var(--ink); color: var(--paper); }
+.paper .node:focus-visible { box-shadow: none; }
+.node:focus-visible .node-name { box-shadow: 0 0 0 3px var(--ring); }
+
+/* lit: hovering a node shows its neighborhood and quiets the rest */
+.graph-stage.lit .node:not(.near) { opacity: .3; }
+.graph-stage.lit .edge:not(.near) { opacity: .25; }
+.edge.near { stroke: var(--ink-2); }
+
+.hide-person .node.person, .hide-thread .node.thread, .hide-plan .node.plan,
+.hide-person .edge[data-kinds~="person"], .hide-thread .edge[data-kinds~="thread"], .hide-plan .edge[data-kinds~="plan"] { display: none; }
+
+/* inspector */
+.inspector {
+  position: absolute; top: 16px; right: 16px; width: 344px; max-height: calc(100% - 32px);
+  overflow: auto; overscroll-behavior: contain; padding: 18px 12px 16px; border-radius: 14px;
+}
+.inspect-head { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 14px; align-items: center; padding: 0 6px; }
+.inspect-head .mono { width: 48px; height: 48px; font-size: 17px; }
+.inspect-head .glyph { display: grid; place-items: center; width: 40px; height: 40px; }
+.inspect-head.thread .glyph { border-radius: 10px; }
+.inspect-head.thread .glyph .sym { width: 20px; height: 20px; }
+.inspect-head.plan .glyph { width: 32px; height: 32px; margin: 0 4px; border-radius: 7px; }
+.inspect .kind { font: var(--t-caption); color: var(--c, var(--ink-3)); }
+.inspect.plain .kind { color: var(--ink-3); }
+.inspect h2 { margin-top: 1px; font: var(--t-title-3); letter-spacing: -0.005em; text-wrap: balance; }
+.inspect .sub { margin-top: 3px; font: var(--t-subhead); color: var(--ink-2); }
+.inspect h3 { margin: 18px 6px 4px; font: var(--t-caption); color: var(--ink-3); }
+.inspect h3 span { font-weight: 400; }
+.near { list-style: none; margin: 0; padding: 0; }
+.near button {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: 9px;
+  width: 100%; min-height: 32px; padding: 0 6px 0 8px; border-radius: var(--radius); text-align: left;
+  font: var(--t-callout); color: var(--ink); transition: background-color .12s;
+}
+.near button:hover { background: color-mix(in srgb, var(--surface) 70%, transparent); }
+.near .name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.near .via { font: var(--t-subhead); color: var(--ink-3); }
+.near .chev { width: 13px; height: 13px; color: var(--ink-3); }
+.open-in { margin: 18px 6px 0; background: color-mix(in srgb, var(--surface) 70%, transparent); box-shadow: inset 0 0 0 1px var(--line); color: var(--ink); text-decoration: none; }
+.open-in:hover { background: var(--surface); }
+
+@supports (corner-shape: squircle) {
+  .key.thread, .key.plan, .thread .glyph, .plan .glyph, .node .node-name, .inspector, .near button { corner-shape: squircle; }
+  .thread .glyph { border-radius: 8px; }
+  .plan .glyph { border-radius: 5px; }
+  .inspector { border-radius: 18px; }
+}
+
+@media (max-width: 760px) {
+  .graph-page { --fr: 56px; }
+  .graph-app { height: auto; }
+  .graph-body { flex: none; }
+  .graph-scroll { position: relative; height: 72vh; }
+  .inspector { position: static; width: auto; max-height: none; margin: 12px 16px 24px; }
+  .seg.filters button { padding: 0 9px; }
+}
+
+/* under the safelight, the pools glow rather than flood */
+:root[data-theme="dark"] .pool { opacity: .6; }
+@media (max-width: 760px) { .graph-stage { min-width: 820px; } }

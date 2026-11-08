@@ -70,7 +70,7 @@ async fn stage_script_is_served() {
 async fn every_app_offers_the_darkroom_toggle() {
     let (status, _) = get("/static/js/theme.js").await;
     assert_eq!(status, StatusCode::OK);
-    for slug in ["calendar", "mail", "contacts"] {
+    for slug in ["calendar", "mail", "contacts", "graph"] {
         let (_, body) = get(&format!("/p/{slug}")).await;
         assert!(
             body.contains("/static/js/theme.js"),
@@ -172,4 +172,27 @@ async fn contacts_shows_every_feature() {
     ] {
         assert!(body.contains(needle), "missing {needle}");
     }
+}
+
+#[tokio::test]
+async fn graph_shows_every_feature() {
+    let (status, body) = get("/p/graph").await;
+    assert_eq!(status, StatusCode::OK);
+    for needle in [
+        "10 people, 9 threads, 12 plans",
+        "class=\"node person work focus\"",
+        "class=\"edge circle\"",
+        "data-links=\"",
+        "mask-image: radial-gradient",
+        "class=\"inspector glass\"",
+        "Open in Contacts",
+        "Open in Mail",
+        "Open in Calendar",
+        "data-kind=\"plan\"",
+        "/static/js/graph.js",
+    ] {
+        assert!(body.contains(needle), "missing {needle}");
+    }
+    let (status, _) = get("/static/js/graph.js").await;
+    assert_eq!(status, StatusCode::OK);
 }

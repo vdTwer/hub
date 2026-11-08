@@ -16,6 +16,7 @@ use axum::{
 };
 use calendar::Week;
 use contacts::Book;
+use graph::{Graph, HUES, Kind};
 use mail::{Mailbox, Part};
 use pieces::{Card, Layout, PIECES, Piece};
 use tower_http::services::ServeDir;
@@ -44,6 +45,13 @@ struct CardsPage {
 struct ContactsPage {
     piece: &'static Piece,
     book: &'static Book,
+}
+
+#[derive(Template)]
+#[template(path = "graph.html")]
+struct GraphPage {
+    piece: &'static Piece,
+    graph: Graph,
 }
 
 #[derive(Template)]
@@ -83,6 +91,10 @@ async fn piece(Path(slug): Path<String>) -> Response {
             Layout::Calendar(week) => render(&CalendarPage { piece, week }),
             Layout::Mail(mail) => render(&MailPage { piece, mail }),
             Layout::Contacts(book) => render(&ContactsPage { piece, book }),
+            Layout::Graph(book) => render(&GraphPage {
+                piece,
+                graph: Graph::of(book),
+            }),
         },
     )
 }
