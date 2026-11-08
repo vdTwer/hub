@@ -218,7 +218,7 @@ pub fn percent(minutes: u16) -> f32 {
 
 /// `a / b` for small counts such as days, as a float.
 fn ratio(a: usize, b: usize) -> f32 {
-    let small = |n: usize| u16::try_from(n).map_or(f32::from(u16::MAX), f32::from);
+    let small = |n: usize| u16::try_from(n).map_or_else(|_| f32::from(u16::MAX), f32::from);
     small(a) / small(b)
 }
 
