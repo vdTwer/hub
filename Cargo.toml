@@ -6,6 +6,7 @@ edition = "2024"
 [dependencies]
 askama = "0.16.1"
 axum = "0.8.9"
+pulldown-cmark = { version = "0.13.6", default-features = false, features = ["html"] }
 tokio = { version = "1.54.1", features = ["rt-multi-thread", "macros", "net"] }
 tower-http = { version = "0.7.1", features = ["fs"] }
 

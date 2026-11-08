@@ -4,6 +4,7 @@ pub mod calendar;
 pub mod contacts;
 pub mod graph;
 pub mod mail;
+pub mod notes;
 pub mod pieces;
 
 use askama::Template;
