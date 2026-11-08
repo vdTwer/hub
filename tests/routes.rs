@@ -111,3 +111,23 @@ async fn calendar_shows_every_feature() {
         assert!(body.contains(needle), "missing {needle}");
     }
 }
+
+#[tokio::test]
+async fn mail_shows_every_feature() {
+    let (status, body) = get("/p/mail").await;
+    assert_eq!(status, StatusCode::OK);
+    for needle in [
+        "Pinned",
+        "row unread",
+        "row open",
+        "class=\"owe",
+        "class=\"clip",
+        "class=\"folded",
+        "class=\"files",
+        "class=\"composer",
+        "data-still",
+        "data-palette=",
+    ] {
+        assert!(body.contains(needle), "missing {needle}");
+    }
+}

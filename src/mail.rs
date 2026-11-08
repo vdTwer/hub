@@ -55,6 +55,16 @@ pub struct Message {
 }
 
 impl Message {
+    /// Up to two initials, for the sender's monogram.
+    #[must_use]
+    pub fn initials(&self) -> String {
+        self.from
+            .split_whitespace()
+            .filter_map(|w| w.chars().next())
+            .take(2)
+            .collect()
+    }
+
     /// The first paragraph, for a folded message.
     #[must_use]
     pub fn gist(&self) -> &'static str {
@@ -546,6 +556,13 @@ mod tests {
             .filter(|m| m.category.is_some())
             .count();
         assert_eq!(total, tagged);
+    }
+
+    #[test]
+    fn initials_take_the_first_two_names() {
+        let m = MAILBOX.thread.messages[0];
+        assert_eq!(m.initials(), "AL");
+        assert_eq!(Message { from: "You", ..m }.initials(), "Y");
     }
 
     #[test]

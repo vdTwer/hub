@@ -2,6 +2,7 @@
 //! and dropping its fragment shader into `static/shaders/`.
 
 use crate::calendar::{WEEK, Week};
+use crate::mail::{MAILBOX, Mailbox};
 
 /// One colorway for a card piece. The shader reads the colors in order as
 /// base, soft, primary, accent and secondary.
@@ -29,6 +30,9 @@ pub enum Layout {
     /// An app mockup: a calendar week, with a still print of the shader
     /// behind days that differ.
     Calendar(&'static Week),
+    /// An app mockup: a webmail inbox, with a still print of the shader
+    /// in the open thread's hue.
+    Mail(&'static Mailbox),
 }
 
 /// One showcase piece: a layout, a short caption and usually a shader.
@@ -85,6 +89,14 @@ pub const PIECES: &[Piece] = &[
                 with unusual days washed in grainy fluid color.",
         shader: Some("fluid-grain.frag"),
         layout: Layout::Calendar(&WEEK),
+    },
+    Piece {
+        slug: "mail",
+        title: "An inbox, on paper",
+        blurb: "A webmail mockup in the calendar's language: a quiet inbox, \
+                and the open thread headed by a grainy print of its color.",
+        shader: Some("fluid-grain.frag"),
+        layout: Layout::Mail(&MAILBOX),
     },
 ];
 

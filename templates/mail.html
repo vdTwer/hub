@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% block title %}{{ piece.title }}{% endblock %}
+{% block body_class %}paper mail-page{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="/static/paper.css">
+<link rel="stylesheet" href="/static/mail.css">
+<svg width="0" height="0" style="position: absolute" aria-hidden="true">
+  <symbol id="clip" viewBox="0 0 16 16"><path d="M10.5 4.5 5.8 9.2a1.4 1.4 0 0 0 2 2l5-5a2.8 2.8 0 0 0-4-4l-5.2 5.2a4.2 4.2 0 0 0 6 6l4-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="search" viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.6" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="m10.4 10.4 3.4 3.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
+</svg>
+<div class="mail-app">
+
+  <aside class="rail">
+    <button type="button" class="compose">Compose</button>
+    <nav aria-label="Folders">
+      <ul class="folders">
+        {% for f in mail.folders.iter() %}
+        <li{% if loop.first %} class="active"{% endif %}><span>{{ f.name }}</span>{% if f.count > 0 %}<span class="n">{{ f.count }}</span>{% endif %}</li>
+        {% endfor %}
+      </ul>
+      <h2>Labels</h2>
+      <ul class="folders labels">
+        {% for (c, n) in mail.labels() %}
+        <li class="{{ c.class() }}"><span><i class="swatch" aria-hidden="true"></i>{{ c.label() }}</span><span class="n">{{ n }}</span></li>
+        {% endfor %}
+      </ul>
+    </nav>
+  </aside>
+
+  <section class="list" aria-label="Inbox">
+    <header class="list-head">
+      <div class="title-row">
+        <h1>Inbox</h1>
+        <span class="meta">{{ mail.today() }}, {{ mail.unread() }} unread</span>
+      </div>
+      <label class="search"><svg aria-hidden="true"><use href="#search"/></svg><input type="search" placeholder="Search mail" aria-label="Search mail"></label>
+      <span class="seg"><button type="button" class="active">All</button><button type="button">Unread</button><button type="button">Attachments</button></span>
+    </header>
+    <div class="list-scroll">
+      {% for g in mail.groups() %}
+      <h2 class="group">{{ g.heading }}</h2>
+      <ol class="rows">
+        {% for i in g.rows.iter().copied() %}{% let m = mail.mail(i) %}
+        <li class="row{% if m.unread %} unread{% endif %}{% if mail.is_open(i) %} open{% endif %}" title="{{ m.subject }}">
+          <span class="from">{{ m.from }}{% if m.thread > 1 %}<span class="count">{{ m.thread }}</span>{% endif %}</span>
+          <time>{{ mail.when(m.stamp) }}</time>
+          <span class="subject">{{ m.subject }}</span>
+          <span class="snippet">{{ m.snippet }}</span>
+          <span class="tags">
+            {% if let Some(c) = m.category %}<span class="tag {{ c.class() }}">{{ c.label() }}</span>{% endif %}
+            {% if m.attachments > 0 %}<span class="clip"><svg aria-hidden="true"><use href="#clip"/></svg>{{ m.attachments }}</span>{% endif %}
+            {% if let Some(r) = m.reply_by %}<span class="owe"><span class="check" aria-hidden="true"></span>{{ r }}</span>{% endif %}
+          </span>
+        </li>
+        {% endfor %}
+      </ol>
+      {% endfor %}
+    </div>
+  </section>
+
+  <article class="reader {{ mail.thread.category.class() }}" aria-label="{{ mail.thread.subject }}">
+    <header class="reader-head">
+      <canvas class="print" aria-hidden="true" data-still
+              data-shader="{{ piece.shader_url() }}"
+              data-palette="{{ mail.thread.palette_attr() }}"
+              data-time-offset="7"></canvas>
+      <div class="reader-tools">
+        <span class="seg"><button type="button">Reply</button><button type="button">Forward</button></span>
+        <span class="seg"><button type="button">Snooze</button><button type="button">Archive</button></span>
+      </div>
+      <div class="reader-title">
+        <span class="tag">{{ mail.thread.category.label() }}</span>
+        <h2>{{ mail.thread.subject }}</h2>
+        <p class="meta">{{ mail.thread.messages.len() }} messages</p>
+      </div>
+    </header>
+
+    <ol class="messages">
+      {% for msg in mail.thread.folded() %}
+      <li class="folded" title="{{ msg.gist() }}">
+        <span class="who">{{ msg.from }}</span>
+        <span class="gist">{{ msg.gist() }}</span>
+        <time>{{ mail.when(msg.stamp) }}</time>
+      </li>
+      {% endfor %}
+      {% for msg in mail.thread.expanded() %}
+      <li class="message{% if msg.from == "You" %} mine{% endif %}">
+        <header>
+          <span class="mono" aria-hidden="true">{{ msg.initials() }}</span>
+          <span class="who">{{ msg.from }}<span class="to">to {{ msg.to }}</span></span>
+          <time>{{ mail.when_long(msg.stamp) }}</time>
+        </header>
+        <div class="body">
+          {% for para in msg.body.iter() %}<p>{{ para }}</p>{% endfor %}
+        </div>
+        {% if !msg.attachments.is_empty() %}
+        <ul class="files">
+          {% for a in msg.attachments.iter() %}
+          <li><svg aria-hidden="true"><use href="#clip"/></svg><span class="name">{{ a.name }}</span><span class="size">{{ a.size }}</span></li>
+          {% endfor %}
+        </ul>
+        {% endif %}
+      </li>
+      {% endfor %}
+    </ol>
+
+    <form class="composer" aria-label="Reply">
+      <p class="to">Reply to Ava Lindqvist, Jonas Weber and Team</p>
+      <p class="draft">{{ mail.thread.draft }}<span class="caret" aria-hidden="true"></span></p>
+      <div class="send-row">
+        <span class="saved">Draft saved</span>
+        <button type="button" class="send">Send</button>
+      </div>
+    </form>
+  </article>
+</div>
+<script src="/static/js/stage.js" defer></script>
+{% endblock %}
