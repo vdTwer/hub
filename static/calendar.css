@@ -1,24 +1,32 @@
 /* A week, on paper. Every mark carries information: hue means category
-   (work, personal, travel), a fluid wash means a day that differs from the
-   rest, and red means now. Shapes share one language: squircle corners, a
-   solid fill in the category color and a soft shadow. Todos are the one
-   outlined shape, because they mark a moment, not a block of time. */
+   (work, personal, travel), a quiet tint means a day that differs from the
+   rest, and red means now. Shapes share one language: small squircle
+   corners, a solid fill and a soft shadow. Todos are the one outlined shape,
+   because they mark a moment, not a block of time.
+
+   Type: Geist for words, Geist Mono for every number and label, so times
+   line up and read as data. */
+
+@font-face { font-family: "Geist"; src: url("/static/fonts/geist.woff2") format("woff2"); font-weight: 100 900; font-display: swap; }
+@font-face { font-family: "Geist Mono"; src: url("/static/fonts/geist-mono.woff2") format("woff2"); font-weight: 100 900; font-display: swap; }
 
 .calendar-page {
-  --paper: #fcfbf7;
+  --sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --paper: #fbfaf6;
   --surface: #ffffff;
-  --ink: #16161a;
-  --ink-2: #6e6e76;
-  --ink-3: #8a8a92;
-  --hair: rgba(22, 22, 26, 0.07);
-  --line: rgba(22, 22, 26, 0.12);
-  --now: #e5322b;
-  /* Fills come from the fluid's own palette (cobalt, apricot, lagoon),
-     softened to sit on the paper; text is a deep shade of the same hue. */
-  --work: #dfe3fc;     --work-ink: #2b3889;
-  --personal: #fbe2d4; --personal-ink: #85391a;
-  --travel: #d4efed;   --travel-ink: #0f5960;
-  --radius: 8px;
+  --ink: #121216;
+  --ink-2: #55555d;
+  --ink-3: #7b7b84;
+  --hair: rgba(18, 18, 22, 0.08);
+  --line: rgba(18, 18, 22, 0.14);
+  --now: #df2a22;
+  /* Cobalt, apricot and lagoon, deep enough to read at a glance; text is a
+     dark shade of the same hue (all pairs above 7:1). */
+  --work: #d5dbfb;     --work-ink: #1b2676;
+  --personal: #f8d5c2; --personal-ink: #6b290b;
+  --travel: #c5e7e3;   --travel-ink: #08474d;
+  --radius: 4px;
   --hour: 66px;
   --gutter: 64px;
   --inset: 3px;
@@ -27,8 +35,8 @@
   color-scheme: light;
   background: var(--paper);
   color: var(--ink);
-  font: 400 14px/1.4 "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  font-feature-settings: "tnum", "cv11";
+  font: 400 14px/1.4 var(--sans);
+  font-feature-settings: "tnum";
   -webkit-font-smoothing: antialiased;
 }
 .work { --fill: var(--work); --c: var(--work-ink); }
@@ -39,18 +47,17 @@
 button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
 
 /* header */
-.top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px 32px; margin-bottom: 40px; }
-.top h1 { font-size: clamp(28px, 3.2vw, 38px); font-weight: 650; line-height: 1.1; letter-spacing: -0.025em; }
+.top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px 32px; margin-bottom: 36px; }
+.top h1 { font-size: clamp(26px, 3vw, 34px); font-weight: 600; line-height: 1.1; letter-spacing: -0.035em; }
 .controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-.seg { display: inline-flex; padding: 3px; gap: 2px; border-radius: 10px; background: rgba(22, 22, 26, 0.05); }
-.seg button, .seg-solo { height: 28px; padding: 0 12px; border-radius: var(--radius); font-size: 13px; font-weight: 500; color: var(--ink-2); }
-.seg button:hover, .seg-solo:hover { color: var(--ink); }
-.seg button.active { color: var(--ink); background: var(--surface); box-shadow: 0 1px 2px rgba(0, 0, 0, .08), 0 0 0 .5px rgba(0, 0, 0, .06); }
-.seg-solo { height: 34px; border-radius: 10px; box-shadow: 0 0 0 1px var(--line) inset; }
+.seg { display: inline-flex; padding: 2px; gap: 2px; border-radius: 6px; background: rgba(18, 18, 22, 0.06); }
+.seg button { height: 28px; padding: 0 12px; border-radius: var(--radius); font-size: 13px; font-weight: 500; letter-spacing: -0.005em; color: var(--ink-2); }
+.seg button:hover { color: var(--ink); }
+.seg button.active { color: var(--ink); background: var(--surface); box-shadow: 0 1px 2px rgba(0, 0, 0, .1), 0 0 0 .5px rgba(0, 0, 0, .08); }
 
 .scroller {
   overflow: auto;
-  height: max(440px, calc(100vh - 290px));
+  height: max(440px, calc(100vh - 270px));
   overscroll-behavior: contain;
 }
 .sticky-head { position: sticky; top: 0; z-index: 6; background: var(--paper); }
@@ -59,29 +66,29 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 
 /* day heads */
 .head-row { padding-bottom: 12px; }
-.day-head { display: flex; align-items: center; gap: 10px; padding: 0 var(--room) 0 var(--inset); white-space: nowrap; min-width: 0; overflow: hidden; }
+.day-head { display: flex; align-items: baseline; gap: 8px; padding: 0 var(--room) 0 var(--inset); white-space: nowrap; min-width: 0; overflow: hidden; }
 .day-top { display: contents; }
-.day-head .name { order: -2; font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
-.day-head .date { order: -1; font-size: 22px; font-weight: 600; letter-spacing: -0.02em; line-height: 32px; }
+.day-head .name { order: -2; font: 500 11px/1 var(--mono); letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); }
+.day-head .date { order: -1; font-size: 21px; font-weight: 500; letter-spacing: -0.03em; line-height: 30px; }
 .day-head.today .name { color: var(--now); }
-.day-head.today .date { color: #fff; background: var(--now); border-radius: 50%; width: 32px; text-align: center; font-size: 16px; }
-.tint-label { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11.5px; font-weight: 500; color: color-mix(in srgb, var(--c) 70%, var(--ink)); }
-.tint-label::before { content: ""; display: inline-block; width: 6px; height: 6px; margin: 0 5px 1px 0; border-radius: 50%; background: var(--c); }
+.day-head.today .date { color: #fff; background: var(--now); border-radius: 6px; padding: 0 7px; font-weight: 600; }
+.tint-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 500 11px/1 var(--mono); color: color-mix(in srgb, var(--c) 75%, var(--ink)); }
+.tint-label::before { content: ""; display: inline-block; width: 7px; height: 7px; margin: 0 6px 0 0; border-radius: 2px; background: var(--c); }
 
 /* the shared slip shape */
 .allday, .event, .someday li.is-event {
   border-radius: var(--radius);
   background: var(--fill);
   color: var(--c);
-  box-shadow: 0 1px 2px rgba(22, 22, 26, .07), 0 6px 14px -9px color-mix(in srgb, var(--c) 45%, transparent);
+  box-shadow: 0 1px 2px rgba(18, 18, 22, .08), 0 4px 10px -6px color-mix(in srgb, var(--c) 40%, transparent);
 }
 
 /* all day */
-.allday-row { grid-template-rows: repeat(var(--lanes), 28px); row-gap: 6px; padding-bottom: 16px; }
+.allday-row { grid-template-rows: repeat(var(--lanes), 26px); row-gap: 5px; padding-bottom: 16px; }
 .allday {
-  margin: 0 var(--room) 0 var(--inset); padding: 0 10px;
+  margin: 0 var(--room) 0 var(--inset); padding: 0 9px;
   display: flex; align-items: center;
-  font-size: 12.5px; font-weight: 600;
+  font-size: 12.5px; font-weight: 600; letter-spacing: -0.01em;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
@@ -93,93 +100,94 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   border-top: 1px solid var(--line);
   background-image: repeating-linear-gradient(to bottom, transparent 0 calc(var(--hour) - 1px), var(--hair) calc(var(--hour) - 1px) var(--hour));
 }
-.body .tint { grid-row: 1; width: 100%; height: 100%; display: block; opacity: .62; touch-action: none; }
-.hours { grid-column: 1; grid-row: 1; position: sticky; left: 0; z-index: 4; background: var(--paper); font-size: 11px; font-weight: 500; color: var(--ink-3); }
+.hours { grid-column: 1; grid-row: 1; position: sticky; left: 0; z-index: 4; background: var(--paper); font: 400 10.5px/1 var(--mono); color: var(--ink-3); }
 .hours span { position: absolute; right: 12px; transform: translateY(-50%); }
 .hours span:first-child { display: none; }
-.hours .now-time { right: 6px; padding: 2px 6px; border-radius: 6px; color: #fff; background: var(--now); font-weight: 600; }
+.hours .now-time { right: 6px; padding: 3px 5px; border-radius: 3px; color: #fff; background: var(--now); font-weight: 600; }
 .day-col { grid-row: 1; position: relative; border-left: 1px solid var(--hair); }
+/* a day that differs: a flat, static wash of its color */
+.day-col.tinted { background: color-mix(in srgb, var(--c) 8%, transparent); }
 
 /* events: overlapping ones cascade, later ones on top */
 .event {
   position: absolute;
   left: calc(var(--inset) + var(--depth) * 18px);
   right: var(--room);
-  padding: 6px 9px 0;
+  padding: 6px 8px 0;
   overflow: hidden;
-  font-size: 12.5px; line-height: 1.3;
+  font-size: 13px; line-height: 1.25;
+  box-shadow: 0 0 0 1.5px var(--paper), 0 1px 2px rgba(18, 18, 22, .08), 0 4px 10px -6px color-mix(in srgb, var(--c) 40%, transparent);
 }
-.event h3 { font-size: inherit; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.event p { font-size: 11.5px; color: color-mix(in srgb, var(--c) 72%, var(--fill)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.event.short { padding-top: 3px; }
-.event h3 span { margin-left: 4px; font-weight: 500; font-size: 11.5px; color: color-mix(in srgb, var(--c) 72%, var(--fill)); }
-.event { box-shadow: 0 0 0 1.5px var(--paper), 0 1px 2px rgba(22, 22, 26, .07), 0 6px 14px -9px color-mix(in srgb, var(--c) 45%, transparent); }
-.event.is-now { box-shadow: 0 0 0 2px var(--paper), 0 0 0 3.5px var(--c), 0 10px 24px -12px color-mix(in srgb, var(--c) 60%, transparent); }
+.event h3 { font-size: inherit; font-weight: 600; letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.event p, .event h3 span { font: 400 11px/1.5 var(--mono); color: color-mix(in srgb, var(--c) 82%, var(--fill)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.event h3 span { margin-left: 5px; }
+.event.short { padding-top: 4px; }
+.event.is-now { box-shadow: 0 0 0 2px var(--paper), 0 0 0 3.5px var(--c), 0 8px 18px -10px color-mix(in srgb, var(--c) 60%, transparent); }
 
-/* todos: a point in time, so an outlined capsule, never a filled block */
+/* todos: a point in time, so an outlined tag, never a filled block */
 .todo {
   position: absolute; left: var(--inset); right: var(--room); z-index: 2;
   transform: translateY(-50%);
-  height: 28px; padding: 0 9px;
+  height: 26px; padding: 0 8px;
   display: flex; align-items: center; gap: 7px;
   border-radius: var(--radius);
   background: var(--surface);
-  box-shadow: inset 0 0 0 1px var(--line), 0 1px 2px rgba(22, 22, 26, .06);
-  font-size: 12.5px; font-weight: 500;
+  box-shadow: inset 0 0 0 1px var(--line), 0 1px 2px rgba(18, 18, 22, .06);
+  font-size: 12.5px; font-weight: 500; letter-spacing: -0.005em;
 }
 .todo .title { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.check { flex: none; width: 13px; height: 13px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px var(--ink-3); }
+.check { flex: none; width: 12px; height: 12px; border-radius: 3px; box-shadow: inset 0 0 0 1.5px var(--ink-3); }
 .todo.done { color: var(--ink-3); text-decoration: line-through; }
-.done .check { background: var(--ink-3) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M3.2 6.2l1.8 1.8 3.8-4' fill='none' stroke='%23fff' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 11px no-repeat; box-shadow: none; }
+.done .check { background: var(--ink-3) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M3.2 6.2l1.8 1.8 3.8-4' fill='none' stroke='%23fff' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 10px no-repeat; box-shadow: none; }
 
 /* now */
 .now-line { position: absolute; left: 0; right: 0; height: 2px; margin-top: -1px; background: var(--now); z-index: 3; }
 .now-line::before { content: ""; position: absolute; left: -5px; top: -4px; width: 10px; height: 10px; border-radius: 50%; background: var(--now); box-shadow: 0 0 0 2px var(--paper); }
 
+/* past events recede: flatter and quieter, so the future stands out */
+.allday.past, .event.past {
+  background: color-mix(in srgb, var(--fill) 50%, var(--paper));
+  color: color-mix(in srgb, var(--c) 62%, var(--paper));
+}
+.allday.past { box-shadow: none; }
+.event.past { box-shadow: 0 0 0 1.5px var(--paper); }
+.event.past p, .event.past h3 span { color: color-mix(in srgb, var(--c) 50%, var(--paper)); }
+
 /* tray: undated items under the week */
-.tray { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 24px 48px; margin-top: 36px; padding: 28px 0 0 var(--gutter); border-top: 1px solid var(--line); }
-.someday h2 { font-size: 13px; font-weight: 600; margin-bottom: 14px; }
+.tray { margin-top: 32px; padding: 24px 0 0 var(--gutter); border-top: 1px solid var(--line); }
+.someday h2 { font: 500 11px/1 var(--mono); letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 14px; }
 .someday ul { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 10px; }
 .someday li {
   display: flex; align-items: center; gap: 10px;
-  min-height: 36px; padding: 0 14px 0 12px;
+  min-height: 34px; padding: 0 12px;
   border-radius: var(--radius);
-  font-size: 13px; font-weight: 500;
+  font-size: 13px; font-weight: 500; letter-spacing: -0.005em;
 }
-.someday li.is-todo { background: var(--surface); box-shadow: inset 0 0 0 1px var(--line), 0 1px 2px rgba(22, 22, 26, .06); }
+.someday li.is-todo { background: var(--surface); box-shadow: inset 0 0 0 1px var(--line), 0 1px 2px rgba(18, 18, 22, .06); }
 .someday li .rule { display: none; }
-.someday .detail { font-weight: 400; font-size: 12px; color: var(--ink-3); white-space: nowrap; }
-.someday li.is-event .detail { color: color-mix(in srgb, var(--c) 72%, var(--fill)); }
+.someday .detail { font: 400 11px/1 var(--mono); color: var(--ink-3); white-space: nowrap; }
+.someday li.is-event .detail { color: color-mix(in srgb, var(--c) 82%, var(--fill)); }
+
+/* keyboard focus */
+.calendar-page :focus-visible { outline: 2px solid var(--work-ink); outline-offset: 2px; border-radius: var(--radius); }
+
+/* the gutter cells in the sticky head stay put on sideways scroll too */
+.head-row > :first-child, .allday-row > .gutter-cell { position: sticky; left: 0; background: var(--paper); z-index: 1; }
+.allday-row > .gutter-cell { grid-column: 1; grid-row: 1 / -1; }
 
 /* Squircles: CSS Borders 4 corner-shape, in Chromium since 139. A squircle
-   needs a larger radius to look as soft as a circular arc; elsewhere the
-   corners stay round. */
+   needs a slightly larger radius to look as soft as a circular arc;
+   elsewhere the corners stay round. */
 @supports (corner-shape: squircle) {
-  .calendar-page { --radius: 14px; }
-  .allday, .event, .todo, .someday li, .seg, .seg button, .seg-solo, .hours .now-time {
+  .calendar-page { --radius: 6px; }
+  .allday, .event, .todo, .someday li, .seg, .seg button, .hours .now-time, .day-head.today .date, .check {
     corner-shape: squircle;
   }
-  .seg { border-radius: 16px; }
-  .seg-solo { border-radius: 16px; }
+  .seg { border-radius: 8px; }
+  .day-head.today .date { border-radius: 8px; }
 }
 
 @media (max-width: 700px) {
   .page { padding: 28px 16px 48px; }
   .tray { padding-left: 0; }
 }
-
-/* past events recede: flatter and quieter, so the future stands out */
-.allday.past, .event.past {
-  background: color-mix(in srgb, var(--fill) 55%, var(--paper));
-  color: color-mix(in srgb, var(--c) 60%, var(--paper));
-}
-.allday.past { box-shadow: none; }
-.event.past { box-shadow: 0 0 0 1.5px var(--paper); }
-.event.past p, .event.past h3 span { color: color-mix(in srgb, var(--c) 45%, var(--paper)); }
-
-/* keyboard focus */
-.calendar-page :focus-visible { outline: 2px solid var(--work-ink); outline-offset: 2px; border-radius: 6px; }
-
-/* the gutter cell in the sticky head stays put on sideways scroll too */
-.head-row > :first-child, .allday-row > .gutter-cell { position: sticky; left: 0; background: var(--paper); z-index: 1; }
-.allday-row > .gutter-cell { grid-column: 1; grid-row: 1 / -1; }
