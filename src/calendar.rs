@@ -25,6 +25,26 @@ impl Category {
             Self::Travel => "travel",
         }
     }
+
+    #[must_use]
+    pub const fn label(self) -> &'static str {
+        match self {
+            Self::Work => "Work",
+            Self::Personal => "Personal",
+            Self::Travel => "Travel",
+        }
+    }
+
+    /// Five colors for a still print of the fluid in this category's hue:
+    /// base, soft, primary, accent and secondary.
+    #[must_use]
+    pub const fn palette(self) -> [&'static str; 5] {
+        match self {
+            Self::Work => ["#f1f2fc", "#d5dbfb", "#9fb0ff", "#c9b8ff", "#b5d4ff"],
+            Self::Personal => ["#fbf6ea", "#fde9b8", "#ffc9a8", "#ffb59a", "#f6dca6"],
+            Self::Travel => ["#eef8f8", "#bfeceb", "#7fd6d6", "#b9cdfc", "#a6ecd9"],
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
