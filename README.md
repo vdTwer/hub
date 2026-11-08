@@ -9,7 +9,8 @@ The first piece, Fluid, on film, renders soft gradients that fold into each othe
 water and prints them through a subtle analog treatment of grain, halation, gate weave and
 flicker. Move the pointer across it, and the dye follows. The second piece, Colorways, pours
 the same fluid into six cards, each built around a different primary color. The third, A week,
-on paper, is a minimal, modern calendar mockup with no shader at all.
+on paper, is a minimal, modern calendar mockup that washes its unusual days in still prints of
+the same grainy fluid.
 
 Ready to try it? Jump to the [installation instructions](#installation).
 
@@ -46,11 +47,11 @@ Ready to try it? Jump to the [installation instructions](#installation).
 
 - Every mark carries information, in the spirit of Tufte. Hue encodes the calendar: cobalt for
   work, apricot for personal and lagoon for travel, taken from the fluid's palette and deep
-  enough that text on every fill passes 7:1. A flat, static tint marks days that differ from
-  the rest, and red
-  marks now.
-- Type is Geist for words and Geist Mono for every number and label, so times line up and
-  read as data. Both are vendored under the OFL, with no font CDN.
+  enough that text on every fill passes 7:1. A still print of the grainy fluid marks days that
+  differ from the rest, and red marks now.
+- Type is Source Sans 3, a humanist sans with open, calligraphic forms. Its figures are
+  tabular by default, so times line up without a mono face. It is vendored under the OFL, with
+  no font CDN.
 - Shapes share one language: small squircle corners (CSS `corner-shape: squircle`, round where a
   browser lacks it), a solid fill and a soft shadow, for events, all-day
   bars and undated items alike. Todos are the one outlined shape.
@@ -78,6 +79,8 @@ Ready to try it? Jump to the [installation instructions](#installation).
 - Pages are rendered on the server, and one small script runs any piece's shader in WebGL2.
 - The stage runs every `canvas[data-shader]` on a page, pauses canvases that are off screen, and
   passes `data-palette` colors to the shader as `u_palette`.
+- A canvas with `data-still` prints one frame and leaves it: no drift, no stirring, and no
+  redraws until it is resized.
 - Every piece gets the pointer trail for free, and any piece that declares a `u_scene` sampler
   gets the blurred pre-pass for glows, bloom or halation.
 - Adding a piece takes one entry in a registry and one shader file.
