@@ -26,6 +26,11 @@ const int STIR = 12;
 uniform vec4 u_stir[STIR];
 uniform float u_stirAge[STIR];
 
+// Optional colorway from the page, in linear light: base, soft, primary,
+// accent, secondary. Without one, the built-in pastel set is used.
+uniform vec3 u_palette[5];
+uniform int u_paletteSize;
+
 out vec4 fragColor;
 
 // ---------------------------------------------------------------- hashing
@@ -106,10 +111,17 @@ vec3 fluid(vec2 uv, float t) {
     float f = fbm(p + 1.1 * r + 0.03 * t);
 
     vec3 paper   = srgbToLinear(vec3(0.94, 0.93, 0.95));
-    vec3 cobalt  = srgbToLinear(vec3(0.16, 0.27, 0.85));
     vec3 lilac   = srgbToLinear(vec3(0.72, 0.62, 0.98));
+    vec3 cobalt  = srgbToLinear(vec3(0.16, 0.27, 0.85));
     vec3 apricot = srgbToLinear(vec3(1.00, 0.60, 0.36));
     vec3 lagoon  = srgbToLinear(vec3(0.20, 0.72, 0.78));
+    if (u_paletteSize == 5) {
+        paper = u_palette[0];
+        lilac = u_palette[1];
+        cobalt = u_palette[2];
+        apricot = u_palette[3];
+        lagoon = u_palette[4];
+    }
 
     vec3 col = mix(paper, lilac, 0.9 * smoothstep(-0.3, 0.4, f));
     col = mix(col, lagoon, 0.9 * smoothstep(-0.1, 0.55, q.y - 0.4 * r.x));
