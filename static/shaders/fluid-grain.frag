@@ -5,15 +5,20 @@
 //   1. A clean, slow gradient: low-octave gradient noise, domain-warped twice
 //      so colors fold into each other like dye in water.
 //   2. An analog print of it: 24 fps grain, gate weave, exposure flicker,
-//      a film tone curve, vignette, and the odd speck of dust.
+//      halation, a film tone curve, vignette, and the odd speck of dust.
 // u_film blends pass 2 in and out, so the two can be compared live.
 //
-// The pointer trail in u_stir lets the viewer stir the fluid.
+// The stage runs this shader twice per frame. With u_pass == 0 it writes
+// the highlights of the clean image into a small, mipmapped texture; with
+// u_pass == 1 it draws the frame and reads that texture back, blurred, for
+// halation. The pointer trail in u_stir lets the viewer stir the fluid.
 precision highp float;
 
 uniform vec2 u_res;
 uniform float u_time;
 uniform float u_film;
+uniform int u_pass;
+uniform sampler2D u_scene;
 
 // Recent pointer samples, newest first: xy position and zw velocity, both in
 // the same units as uv below. A negative age marks an unused slot.
@@ -160,9 +165,19 @@ float dust(vec2 px, uint frame, float scale) {
     return smoothstep(1.0, 0.4, length(d));
 }
 
+// Display-space highlights that are bright enough to halate.
+float highlight(vec3 display) { return smoothstep(0.78, 0.96, luma(display)); }
+
 void main() {
     float film = clamp(u_film, 0.0, 1.0);
     float minRes = min(u_res.x, u_res.y);
+
+    if (u_pass == 0) {
+        vec2 uv = (gl_FragCoord.xy - 0.5 * u_res) / minRes;
+        vec3 display = pow(fluid(uv, u_time), vec3(1.0 / 2.2));
+        fragColor = vec4(display * highlight(display), 1.0);
+        return;
+    }
 
     float scale = max(1.0, minRes / 1000.0);   // keep grain size steady on large screens
     uint frame = uint(floor(u_time * 24.0));   // the projector runs at 24 fps
@@ -180,6 +195,17 @@ void main() {
     float flicker = 1.0 + 0.022 * (rand(uvec3(frame, 5u, 0u)) - 0.5) * 2.0;
     vec3 print = printTone(clean * flicker);
     print = pow(print, vec3(1.0 / 2.2));
+
+    // Halation: bright light passes through the emulsion, reflects off the
+    // film base and exposes the red layer again, so highlights grow a warm
+    // glow into darker neighbors. The mip chain serves as a wide blur.
+    vec2 st = px / u_res;
+    vec3 halo = 0.15 * textureLod(u_scene, st, 1.0).rgb
+              + 0.30 * textureLod(u_scene, st, 2.5).rgb
+              + 0.35 * textureLod(u_scene, st, 3.5).rgb
+              + 0.20 * textureLod(u_scene, st, 4.5).rgb;
+    float spill = luma(halo) * (1.0 - highlight(print));
+    print += spill * vec3(0.95, 0.28, 0.1) * 0.6;
 
     // Vignette, as from an old lens.
     vec2 v = (gl_FragCoord.xy / u_res - 0.5) * vec2(u_res.x / minRes, u_res.y / minRes);
