@@ -9,6 +9,9 @@
 //   u_stir (vec4[12]) recent pointer samples: position xy, velocity zw,
 //                     in units of the short side, origin at the center
 //   u_stirAge (float[12]) seconds since each sample, -1 when unused
+// A canvas with data-still draws one frame, a print rather than a film: its
+// clock stands at data-time-offset, it ignores the pointer and it redraws
+// only when resized or when the film treatment changes.
 // A piece that declares `sampler2D u_scene` gets two passes per frame:
 // u_pass 0 renders at quarter size into u_scene, which is then mipmapped
 // (a cheap wide blur), and u_pass 1 renders the frame to the screen.
@@ -94,9 +97,10 @@ async function stage(canvas) {
   gl.uniform1i(u("u_paletteSize"), colors.length);
 
   // Pointer trail, newest first. Positions use the shader's uv convention.
+  const still = "still" in canvas.dataset;
   const trail = [];
   let lastMove = null;
-  canvas.addEventListener("pointermove", (e) => {
+  if (!still) canvas.addEventListener("pointermove", (e) => {
     const box = canvas.getBoundingClientRect();
     const s = Math.min(box.width, box.height);
     const pos = [
@@ -146,7 +150,9 @@ async function stage(canvas) {
     scene = { tex, fbo, w, h };
   };
 
+  let dirty = true, lastFilm = -1;
   const resize = () => {
+    dirty = true;
     const dpr = Math.min(devicePixelRatio || 1, 2);
     canvas.width = Math.max(1, Math.round(canvas.clientWidth * dpr));
     canvas.height = Math.max(1, Math.round(canvas.clientHeight * dpr));
@@ -160,7 +166,9 @@ async function stage(canvas) {
   new IntersectionObserver(([entry]) => { visible = entry.isIntersecting; }).observe(canvas);
 
   return (now, time, film) => {
-    if (!visible) return;
+    if (!visible || (still && !dirty && film === lastFilm)) return;
+    dirty = false;
+    lastFilm = film;
     gl.uniform1f(uTime, time);
     gl.uniform1f(uFilm, film);
     uploadTrail(now);
@@ -205,6 +213,7 @@ async function main() {
   // ?t=12.5 freezes time and ?film=0 starts clean: handy for stills.
   // Each canvas may offset its clock with data-time-offset.
   const frozen = parseFloat(params.get("t"));
+  const stills = canvases.map((c) => "still" in c.dataset);
   const offsets = canvases.map((c) => parseFloat(c.dataset.timeOffset ?? "0") || 0);
   const start = performance.now();
   let last = start;
@@ -212,7 +221,7 @@ async function main() {
     film += (filmTarget - film) * (1 - Math.exp(-(now - last) / 180));
     last = now;
     const time = Number.isFinite(frozen) ? frozen : (now - start) / 1000;
-    draws.forEach((draw, i) => draw(now, time + offsets[i], film));
+    draws.forEach((draw, i) => draw(now, (stills[i] ? 0 : time) + offsets[i], film));
     requestAnimationFrame(frame);
   };
   requestAnimationFrame(frame);
