@@ -1,56 +1,21 @@
-/* A week, on paper. Every mark carries information: hue means category
-   (work, personal, travel), a quiet tint means a day that differs from the
-   rest, and red means now. Shapes share one language: small squircle
-   corners, a solid fill and a soft shadow. Todos are the one outlined shape,
-   because they mark a moment, not a block of time.
-
-   Type: Source Sans 3, a humanist sans with open, calligraphic forms. Its
-   figures are tabular by default, so times line up without a mono face. */
-
-@font-face { font-family: "Source Sans 3"; src: url("/static/fonts/source-sans-3.woff2") format("woff2"); font-weight: 200 900; font-display: swap; }
+/* A week, on paper, built on paper.css. A still print of grainy fluid
+   color marks a day that differs from the rest, and todos are the one
+   outlined shape, because they mark a moment, not a block of time. */
 
 .calendar-page {
-  --sans: "Source Sans 3", "Segoe UI", "Helvetica Neue", sans-serif;
-  --paper: #fbfaf6;
-  --surface: #ffffff;
-  --ink: #121216;
-  --ink-2: #55555d;
-  --ink-3: #7b7b84;
-  --hair: rgba(18, 18, 22, 0.08);
-  --line: rgba(18, 18, 22, 0.14);
-  --now: #df2a22;
-  /* Cobalt, apricot and lagoon, deep enough to read at a glance; text is a
-     dark shade of the same hue (all pairs above 7:1). */
-  --work: #d5dbfb;     --work-ink: #1b2676;
-  --personal: #f8d5c2; --personal-ink: #6b290b;
-  --travel: #c5e7e3;   --travel-ink: #08474d;
-  --radius: 4px;
   --hour: 66px;
   --gutter: 64px;
   --inset: 3px;
   --room: 14px;
   --cols: var(--gutter) repeat(7, minmax(136px, 1fr));
-  color-scheme: light;
-  background: var(--paper);
-  color: var(--ink);
-  font: 400 15px/1.4 var(--sans);
-  -webkit-font-smoothing: antialiased;
 }
-.work { --fill: var(--work); --c: var(--work-ink); }
-.personal { --fill: var(--personal); --c: var(--personal-ink); }
-.travel { --fill: var(--travel); --c: var(--travel-ink); }
 
 .page { padding: 40px 40px 56px; }
-button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
 
 /* header */
 .top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px 32px; margin-bottom: 36px; }
 .top h1 { font-size: clamp(28px, 3.2vw, 38px); font-weight: 600; line-height: 1.1; letter-spacing: -0.015em; }
 .controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-.seg { display: inline-flex; padding: 2px; gap: 2px; border-radius: 6px; background: rgba(18, 18, 22, 0.06); }
-.seg button { height: 28px; padding: 0 12px; border-radius: var(--radius); font-size: 14px; font-weight: 500; color: var(--ink-2); }
-.seg button:hover { color: var(--ink); }
-.seg button.active { color: var(--ink); background: var(--surface); box-shadow: 0 1px 2px rgba(0, 0, 0, .1), 0 0 0 .5px rgba(0, 0, 0, .08); }
 
 .scroller {
   overflow: auto;
@@ -133,9 +98,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   font-size: 13.5px; font-weight: 500;
 }
 .todo .title { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.check { flex: none; width: 12px; height: 12px; border-radius: 3px; box-shadow: inset 0 0 0 1.5px var(--ink-3); }
 .todo.done { color: var(--ink-3); text-decoration: line-through; }
-.done .check { background: var(--ink-3) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M3.2 6.2l1.8 1.8 3.8-4' fill='none' stroke='%23fff' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 10px no-repeat; box-shadow: none; }
 
 /* now */
 .now-line { position: absolute; left: 0; right: 0; height: 2px; margin-top: -1px; background: var(--now); z-index: 3; }
@@ -165,22 +128,12 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 .someday .detail { font-size: 12.5px; line-height: 1; color: var(--ink-3); white-space: nowrap; }
 .someday li.is-event .detail { color: color-mix(in srgb, var(--c) 82%, var(--fill)); }
 
-/* keyboard focus */
-.calendar-page :focus-visible { outline: 2px solid var(--work-ink); outline-offset: 2px; border-radius: var(--radius); }
-
 /* the gutter cells in the sticky head stay put on sideways scroll too */
 .head-row > :first-child, .allday-row > .gutter-cell { position: sticky; left: 0; background: var(--paper); z-index: 1; }
 .allday-row > .gutter-cell { grid-column: 1; grid-row: 1 / -1; }
 
-/* Squircles: CSS Borders 4 corner-shape, in Chromium since 139. A squircle
-   needs a slightly larger radius to look as soft as a circular arc;
-   elsewhere the corners stay round. */
 @supports (corner-shape: squircle) {
-  .calendar-page { --radius: 6px; }
-  .allday, .event, .todo, .someday li, .seg, .seg button, .hours .now-time, .day-head.today .date, .check {
-    corner-shape: squircle;
-  }
-  .seg { border-radius: 8px; }
+  .allday, .event, .todo, .someday li, .hours .now-time, .day-head.today .date { corner-shape: squircle; }
   .day-head.today .date { border-radius: 8px; }
 }
 
