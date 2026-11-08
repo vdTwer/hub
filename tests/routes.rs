@@ -70,7 +70,7 @@ async fn stage_script_is_served() {
 async fn every_app_offers_the_darkroom_toggle() {
     let (status, _) = get("/static/js/theme.js").await;
     assert_eq!(status, StatusCode::OK);
-    for slug in ["calendar", "mail", "contacts", "graph"] {
+    for slug in ["calendar", "mail", "contacts", "graph", "notes"] {
         let (_, body) = get(&format!("/p/{slug}")).await;
         assert!(
             body.contains("/static/js/theme.js"),
@@ -179,7 +179,9 @@ async fn graph_shows_every_feature() {
     let (status, body) = get("/p/graph").await;
     assert_eq!(status, StatusCode::OK);
     for needle in [
-        "10 people, 9 threads, 12 plans",
+        "You, 10 people, 10 threads, 12 plans, 6 notes",
+        "class=\"node person me\"",
+        "class=\"node note work\"",
         "class=\"node person work focus\"",
         "class=\"edge circle\"",
         "data-links=\"",
@@ -194,5 +196,30 @@ async fn graph_shows_every_feature() {
         assert!(body.contains(needle), "missing {needle}");
     }
     let (status, _) = get("/static/js/graph.js").await;
+    assert_eq!(status, StatusCode::OK);
+}
+
+#[tokio::test]
+async fn notes_show_every_feature() {
+    let (status, body) = get("/p/notes").await;
+    assert_eq!(status, StatusCode::OK);
+    for needle in [
+        "6 notes, 2 pinned",
+        "class=\"note-row open\"",
+        "class=\"note-view work open\" id=\"n0\"",
+        "<h2>Day one</h2>",
+        "class=\"mention person work\"",
+        "class=\"mention plan travel\"",
+        "class=\"mention thread",
+        "class=\"mention person me\"",
+        "class=\"source\"",
+        "<span class=\"at person work\">@Ava</span>",
+        "Linked from",
+        "href=\"/p/notes#n4\"",
+        "/static/js/notes.js",
+    ] {
+        assert!(body.contains(needle), "missing {needle}");
+    }
+    let (status, _) = get("/static/js/notes.js").await;
     assert_eq!(status, StatusCode::OK);
 }
