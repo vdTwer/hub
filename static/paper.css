@@ -34,9 +34,9 @@
 .personal { --fill: var(--personal); --c: var(--personal-ink); }
 .travel { --fill: var(--travel); --c: var(--travel-ink); }
 
-.paper button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+:where(.paper) button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
 
-/* segmented controls */
+/* segmented controls (the reset above has no weight, so any class wins) */
 .seg { display: inline-flex; padding: 2px; gap: 2px; border-radius: 6px; background: rgba(18, 18, 22, 0.06); }
 .seg button { height: 28px; padding: 0 12px; border-radius: var(--radius); font-size: 14px; font-weight: 500; color: var(--ink-2); }
 .seg button:hover { color: var(--ink); }
