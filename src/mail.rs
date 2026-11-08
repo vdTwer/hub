@@ -22,6 +22,8 @@ pub struct Stamp {
 pub struct Folder {
     pub name: &'static str,
     pub count: u16,
+    /// The id of its symbol in the page's sprite.
+    pub icon: &'static str,
 }
 
 /// A tag. Any number of them can sit on a thread and be combined in a
@@ -428,22 +430,27 @@ pub const MAILBOX: Mailbox = Mailbox {
         Folder {
             name: "Inbox",
             count: 4,
+            icon: "tray",
         },
         Folder {
             name: "Snoozed",
             count: 2,
+            icon: "clock",
         },
         Folder {
             name: "Drafts",
             count: 1,
+            icon: "doc",
         },
         Folder {
             name: "Sent",
             count: 0,
+            icon: "send",
         },
         Folder {
             name: "Archive",
             count: 0,
+            icon: "archive",
         },
     ],
     mails: &[

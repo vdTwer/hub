@@ -126,11 +126,12 @@ async fn mail_shows_every_feature() {
         "class=\"stack",
         "class=\"new-line",
         "<blockquote",
-        "files-pill",
+        "meta-btn",
         "On your calendar",
         "tag plain",
         "class=\"files",
         "class=\"composer",
+        "class=\"glass toolbar-group",
         "data-still",
         "data-palette=",
     ] {
