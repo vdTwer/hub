@@ -4,11 +4,18 @@
 {% block content %}
 <link rel="stylesheet" href="/static/paper.css">
 <link rel="stylesheet" href="/static/calendar.css">
+<svg width="0" height="0" style="position: absolute" aria-hidden="true">
+  <symbol id="chev" viewBox="0 0 20 20"><path d="m8 5 5 5-5 5"/></symbol>
+</svg>
 <div class="page">
   <header class="top">
     <h1>{{ week.title }}</h1>
     <nav class="controls" aria-label="Calendar">
-      <span class="seg"><button type="button" aria-label="Previous week">&lsaquo;</button><button type="button">Today</button><button type="button" aria-label="Next week">&rsaquo;</button></span>
+      <span class="toolbar-group">
+        <button type="button" class="icon-btn" title="Previous week" aria-label="Previous week"><svg class="sym flip"><use href="#chev"/></svg></button>
+        <button type="button" class="btn today">Today</button>
+        <button type="button" class="icon-btn" title="Next week" aria-label="Next week"><svg class="sym"><use href="#chev"/></svg></button>
+      </span>
       <span class="seg"><button type="button">Day</button><button type="button">3 Days</button><button type="button" class="active">Week</button><button type="button">Multiweek</button><button type="button">Month</button></span>
     </nav>
   </header>
