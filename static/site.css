@@ -32,12 +32,14 @@ a { color: inherit; text-decoration: none; }
 
 /* stage */
 .stage { overflow: hidden; }
-#stage { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; }
+#stage { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; touch-action: none; cursor: crosshair; }
 .caption {
   position: fixed; left: 24px; right: 24px; bottom: 24px;
   display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 6px 24px;
   color: #121218;
+  pointer-events: none;
 }
+.caption a, .caption button { pointer-events: auto; }
 .caption .label { color: inherit; opacity: .7; }
 .caption h1 { grid-column: 1; font-size: 28px; font-weight: 500; letter-spacing: -0.02em; }
 .caption p { grid-column: 1; max-width: 44ch; opacity: .8; }
