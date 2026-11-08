@@ -47,19 +47,21 @@ Ready to try it? Jump to the [installation instructions](#installation).
 - Every mark carries information, in the spirit of Tufte. Hue encodes the calendar (work,
   personal, travel), a fluid-on-film wash marks days that differ from the rest, and red marks
   now.
-- Shapes share one language: a 7-pixel radius, a soft tint of the category color and a
-  3-pixel accent on the leading edge, for events, all-day bars and undated items alike. Todos
-  are outlined capsules in the same radius.
+- Shapes share one language: squircle corners (CSS `corner-shape: squircle`, round where a
+  browser lacks it), a solid fill in the category color and a soft shadow, for events, all-day
+  bars and undated items alike. Todos are the one outlined shape.
+- Events sit flush left in their day and leave room on the right, so the free time stays
+  visible and clickable.
 - Overlapping events cascade like paper slips, as in Apple Calendar: a later event is indented
   and drawn on top of the ones still running.
-- All-day items are bars across the days they cover; multi-day ones are a shade deeper and
-  stack into as few lanes as possible.
+- All-day items are bars across the days they cover, stacked into as few lanes as possible.
 - Todos are points in time with a checkbox, never blocks, so they read differently from events
   at a glance. Done ones are checked and struck through.
-- "Sometime this week" sits in the margin, holding events and todos without a day.
-- "Where am I now" is a red now line on today, the time in the gutter, the current event shaded
-  deeper, and one sentence under the title: what is running, how long it has left, and what is
-  next.
+- "Sometime this week" runs along the bottom of the full-width week, holding events and todos
+  without a day.
+- "Where am I now" is today's date in a red circle, a red now line, the time in the gutter and a
+  ring around the current event.
+- The toolbar offers Day, 3 Days, Week, Multiweek and Month.
 - The layout is computed in Rust and covered by ten unit tests. It is a mockup: the controls
   look real but do nothing.
 
