@@ -151,6 +151,50 @@ impl Tint {
     }
 }
 
+/// One still print behind the week. Tints that touch share a print, so the
+/// fluid runs on across the boundary and the colors only cross-fade over a
+/// narrow seam; a lone tint gets a print of its own.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Print {
+    pub first: usize,
+    pub last: usize,
+    pub palette: [&'static str; 5],
+    /// The palette after the seam, and where the seam sits as a fraction of
+    /// the print's width.
+    pub next: Option<([&'static str; 5], f32)>,
+}
+
+impl Print {
+    /// CSS grid columns; column 1 is the hour gutter.
+    #[must_use]
+    pub const fn grid_start(&self) -> usize {
+        self.first + 2
+    }
+
+    #[must_use]
+    pub const fn grid_end(&self) -> usize {
+        self.last + 3
+    }
+
+    #[must_use]
+    pub fn palette_attr(&self) -> String {
+        self.palette.join(",")
+    }
+
+    #[must_use]
+    pub fn next_palette_attr(&self) -> String {
+        self.next.map(|(p, _)| p.join(",")).unwrap_or_default()
+    }
+
+    /// The seam as a fraction of the print's width, or an empty string.
+    #[must_use]
+    pub fn seam_attr(&self) -> String {
+        self.next
+            .map(|(_, at)| format!("{at:.4}"))
+            .unwrap_or_default()
+    }
+}
+
 #[derive(Debug, Clone, Copy)]
 pub struct Week {
     pub title: &'static str,
@@ -170,6 +214,12 @@ pub struct Week {
 pub fn percent(minutes: u16) -> f32 {
     let clamped = minutes.clamp(DAY_START, DAY_END) - DAY_START;
     100.0 * f32::from(clamped) / f32::from(DAY_END - DAY_START)
+}
+
+/// `a / b` for small counts such as days, as a float.
+fn ratio(a: usize, b: usize) -> f32 {
+    let small = |n: usize| u16::try_from(n).map_or(f32::from(u16::MAX), f32::from);
+    small(a) / small(b)
 }
 
 #[must_use]
@@ -342,6 +392,30 @@ impl Week {
     #[must_use]
     pub fn lane_count(&self) -> usize {
         self.lanes().iter().map(|l| l.lane + 1).max().unwrap_or(1)
+    }
+
+    #[must_use]
+    pub fn prints(&self) -> Vec<Print> {
+        let mut tints = self.tints.to_vec();
+        tints.sort_by_key(|t| t.first);
+        tints
+            .into_iter()
+            .fold(Vec::new(), |mut prints: Vec<Print>, t| {
+                match prints.last_mut() {
+                    Some(p) if p.next.is_none() && p.last + 1 == t.first => {
+                        let seam = ratio(t.first - p.first, t.last + 1 - p.first);
+                        p.next = Some((t.palette, seam));
+                        p.last = t.last;
+                    }
+                    _ => prints.push(Print {
+                        first: t.first,
+                        last: t.last,
+                        palette: t.palette,
+                        next: None,
+                    }),
+                }
+                prints
+            })
     }
 
     #[must_use]
@@ -867,6 +941,62 @@ mod tests {
         );
         assert_eq!(WEEK.minutes_left(), 40);
         assert_eq!(WEEK.next().map(|e| e.title), Some("Quick sync with Ava"));
+    }
+
+    #[test]
+    fn touching_tints_share_one_print_with_a_seam() {
+        let prints = WEEK.prints();
+        assert_eq!(prints.len(), 1);
+        let p = prints[0];
+        assert_eq!((p.first, p.last), (3, 6));
+        assert_eq!(p.palette, WEEK.tints[0].palette);
+        assert_eq!(p.next, Some((WEEK.tints[1].palette, 0.5)));
+        assert_eq!(p.seam_attr(), "0.5000");
+    }
+
+    #[test]
+    fn apart_tints_keep_their_own_prints() {
+        static APART: [Tint; 2] = [
+            Tint {
+                last: 1,
+                ..WEEK.tints[0]
+            },
+            Tint {
+                first: 3,
+                last: 3,
+                ..WEEK.tints[1]
+            },
+        ];
+        let week = Week {
+            tints: &APART,
+            ..WEEK
+        };
+        let prints = week.prints();
+        assert_eq!(prints.len(), 2);
+        assert!(prints.iter().all(|p| p.next.is_none()));
+        assert_eq!(prints[1].seam_attr(), "");
+    }
+
+    #[test]
+    fn a_seam_sits_where_the_second_tint_starts() {
+        static THREE: [Tint; 2] = [
+            Tint {
+                first: 0,
+                last: 2,
+                ..WEEK.tints[0]
+            },
+            Tint {
+                first: 3,
+                last: 3,
+                ..WEEK.tints[1]
+            },
+        ];
+        let week = Week {
+            tints: &THREE,
+            ..WEEK
+        };
+        let p = week.prints()[0];
+        assert_eq!(p.next.map(|(_, at)| at), Some(0.75));
     }
 
     #[test]
