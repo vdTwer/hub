@@ -4,15 +4,13 @@
    corners, a solid fill and a soft shadow. Todos are the one outlined shape,
    because they mark a moment, not a block of time.
 
-   Type: Geist for words, Geist Mono for every number and label, so times
-   line up and read as data. */
+   Type: Source Sans 3, a humanist sans with open, calligraphic forms. Its
+   figures are tabular by default, so times line up without a mono face. */
 
-@font-face { font-family: "Geist"; src: url("/static/fonts/geist.woff2") format("woff2"); font-weight: 100 900; font-display: swap; }
-@font-face { font-family: "Geist Mono"; src: url("/static/fonts/geist-mono.woff2") format("woff2"); font-weight: 100 900; font-display: swap; }
+@font-face { font-family: "Source Sans 3"; src: url("/static/fonts/source-sans-3.woff2") format("woff2"); font-weight: 200 900; font-display: swap; }
 
 .calendar-page {
-  --sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  --mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --sans: "Source Sans 3", "Segoe UI", "Helvetica Neue", sans-serif;
   --paper: #fbfaf6;
   --surface: #ffffff;
   --ink: #121216;
@@ -35,8 +33,7 @@
   color-scheme: light;
   background: var(--paper);
   color: var(--ink);
-  font: 400 14px/1.4 var(--sans);
-  font-feature-settings: "tnum";
+  font: 400 15px/1.4 var(--sans);
   -webkit-font-smoothing: antialiased;
 }
 .work { --fill: var(--work); --c: var(--work-ink); }
@@ -48,10 +45,10 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 
 /* header */
 .top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px 32px; margin-bottom: 36px; }
-.top h1 { font-size: clamp(26px, 3vw, 34px); font-weight: 600; line-height: 1.1; letter-spacing: -0.035em; }
+.top h1 { font-size: clamp(28px, 3.2vw, 38px); font-weight: 600; line-height: 1.1; letter-spacing: -0.015em; }
 .controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .seg { display: inline-flex; padding: 2px; gap: 2px; border-radius: 6px; background: rgba(18, 18, 22, 0.06); }
-.seg button { height: 28px; padding: 0 12px; border-radius: var(--radius); font-size: 13px; font-weight: 500; letter-spacing: -0.005em; color: var(--ink-2); }
+.seg button { height: 28px; padding: 0 12px; border-radius: var(--radius); font-size: 14px; font-weight: 500; color: var(--ink-2); }
 .seg button:hover { color: var(--ink); }
 .seg button.active { color: var(--ink); background: var(--surface); box-shadow: 0 1px 2px rgba(0, 0, 0, .1), 0 0 0 .5px rgba(0, 0, 0, .08); }
 
@@ -68,11 +65,11 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 .head-row { padding-bottom: 12px; }
 .day-head { display: flex; align-items: baseline; gap: 8px; padding: 0 var(--room) 0 var(--inset); white-space: nowrap; min-width: 0; overflow: hidden; }
 .day-top { display: contents; }
-.day-head .name { order: -2; font: 500 11px/1 var(--mono); letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); }
-.day-head .date { order: -1; font-size: 21px; font-weight: 500; letter-spacing: -0.03em; line-height: 30px; }
+.day-head .name { order: -2; font-size: 14px; font-weight: 500; color: var(--ink-3); }
+.day-head .date { order: -1; font-size: 23px; font-weight: 500; letter-spacing: -0.01em; line-height: 30px; }
 .day-head.today .name { color: var(--now); }
 .day-head.today .date { color: #fff; background: var(--now); border-radius: 6px; padding: 0 7px; font-weight: 600; }
-.tint-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 500 11px/1 var(--mono); color: color-mix(in srgb, var(--c) 75%, var(--ink)); }
+.tint-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; font-weight: 500; font-style: italic; color: color-mix(in srgb, var(--c) 75%, var(--ink)); }
 .tint-label::before { content: ""; display: inline-block; width: 7px; height: 7px; margin: 0 6px 0 0; border-radius: 2px; background: var(--c); }
 
 /* the shared slip shape */
@@ -88,7 +85,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 .allday {
   margin: 0 var(--room) 0 var(--inset); padding: 0 9px;
   display: flex; align-items: center;
-  font-size: 12.5px; font-weight: 600; letter-spacing: -0.01em;
+  font-size: 13.5px; font-weight: 600;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
@@ -100,7 +97,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   border-top: 1px solid var(--line);
   background-image: repeating-linear-gradient(to bottom, transparent 0 calc(var(--hour) - 1px), var(--hair) calc(var(--hour) - 1px) var(--hour));
 }
-.hours { grid-column: 1; grid-row: 1; position: sticky; left: 0; z-index: 4; background: var(--paper); font: 400 10.5px/1 var(--mono); color: var(--ink-3); }
+.hours { grid-column: 1; grid-row: 1; position: sticky; left: 0; z-index: 4; background: var(--paper); font-size: 12.5px; line-height: 1; color: var(--ink-3); }
 .hours span { position: absolute; right: 12px; transform: translateY(-50%); }
 .hours span:first-child { display: none; }
 .hours .now-time { right: 6px; padding: 3px 5px; border-radius: 3px; color: #fff; background: var(--now); font-weight: 600; }
@@ -115,11 +112,11 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   right: var(--room);
   padding: 6px 8px 0;
   overflow: hidden;
-  font-size: 13px; line-height: 1.25;
+  font-size: 14px; line-height: 1.25;
   box-shadow: 0 0 0 1.5px var(--paper), 0 1px 2px rgba(18, 18, 22, .08), 0 4px 10px -6px color-mix(in srgb, var(--c) 40%, transparent);
 }
-.event h3 { font-size: inherit; font-weight: 600; letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.event p, .event h3 span { font: 400 11px/1.5 var(--mono); color: color-mix(in srgb, var(--c) 82%, var(--fill)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.event h3 { font-size: inherit; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.event p, .event h3 span { font-size: 12.5px; font-weight: 400; line-height: 1.45; color: color-mix(in srgb, var(--c) 82%, var(--fill)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .event h3 span { margin-left: 5px; }
 .event.short { padding-top: 4px; }
 .event.is-now { box-shadow: 0 0 0 2px var(--paper), 0 0 0 3.5px var(--c), 0 8px 18px -10px color-mix(in srgb, var(--c) 60%, transparent); }
@@ -133,7 +130,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   border-radius: var(--radius);
   background: var(--surface);
   box-shadow: inset 0 0 0 1px var(--line), 0 1px 2px rgba(18, 18, 22, .06);
-  font-size: 12.5px; font-weight: 500; letter-spacing: -0.005em;
+  font-size: 13.5px; font-weight: 500;
 }
 .todo .title { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .check { flex: none; width: 12px; height: 12px; border-radius: 3px; box-shadow: inset 0 0 0 1.5px var(--ink-3); }
@@ -155,17 +152,17 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 
 /* tray: undated items under the week */
 .tray { margin-top: 32px; padding: 24px 0 0 var(--gutter); border-top: 1px solid var(--line); }
-.someday h2 { font: 500 11px/1 var(--mono); letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 14px; }
+.someday h2 { font-size: 14px; font-weight: 600; line-height: 1; color: var(--ink-2); margin-bottom: 14px; }
 .someday ul { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 10px; }
 .someday li {
   display: flex; align-items: center; gap: 10px;
   min-height: 34px; padding: 0 12px;
   border-radius: var(--radius);
-  font-size: 13px; font-weight: 500; letter-spacing: -0.005em;
+  font-size: 14px; font-weight: 500;
 }
 .someday li.is-todo { background: var(--surface); box-shadow: inset 0 0 0 1px var(--line), 0 1px 2px rgba(18, 18, 22, .06); }
 .someday li .rule { display: none; }
-.someday .detail { font: 400 11px/1 var(--mono); color: var(--ink-3); white-space: nowrap; }
+.someday .detail { font-size: 12.5px; line-height: 1; color: var(--ink-3); white-space: nowrap; }
 .someday li.is-event .detail { color: color-mix(in srgb, var(--c) 82%, var(--fill)); }
 
 /* keyboard focus */
