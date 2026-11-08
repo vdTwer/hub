@@ -70,12 +70,21 @@
       </div>
       <div class="reader-title">
         <h2>{{ mail.thread.subject }}</h2>
-        <p class="meta">{{ mail.thread.messages.len() }} messages, {{ mail.span() }}</p>
+        <p class="who-line">
+          <span class="faces" aria-hidden="true">{% for p in mail.thread.people() %}<span class="mono{% if p.is_me() %} mine{% endif %}" title="{{ p.name }}, {{ p.messages }} {% if p.messages == 1 %}message{% else %}messages{% endif %}">{{ p.initials() }}</span>{% endfor %}</span>
+          <span class="meta">{{ mail.thread.messages.len() }} messages, {{ mail.span() }}</span>
+          <button type="button" class="files-pill" title="{% for (a, _) in mail.thread.files() %}{{ a.name }}{% if !loop.last %}, {% endif %}{% endfor %}"><svg aria-hidden="true"><use href="#clip"/></svg>{{ mail.thread.files().len() }} files</button>
+        </p>
         <p class="thread-tags">
           {% for t in mail.open_mail().tags.iter() %}<span class="tag {{ t.class() }}">{{ t.name }}</span>{% endfor %}
           <button type="button" class="add-tag">+ Tag</button>
         </p>
       </div>
+      <ul class="linked" aria-label="On your calendar">
+        {% for l in mail.thread.linked.iter() %}
+        <li class="{{ l.category.class() }}"><a href="/p/calendar" title="On your calendar"><span class="name">{{ l.title }}</span><span class="when">{{ l.when }}</span></a></li>
+        {% endfor %}
+      </ul>
     </header>
 
     <div class="reader-body">
@@ -136,32 +145,6 @@
         </form>
       </div>
 
-      <aside class="context" aria-label="In this thread">
-        <section>
-          <h3>People</h3>
-          <ul class="people">
-            {% for p in mail.thread.people() %}
-            <li{% if p.is_me() %} class="mine"{% endif %}><span class="mono" aria-hidden="true">{{ p.initials() }}</span><span class="name">{{ p.name }}</span><span class="n">{{ p.messages }}</span></li>
-            {% endfor %}
-          </ul>
-        </section>
-        <section>
-          <h3>Files</h3>
-          <ul class="files stacked">
-            {% for (a, from) in mail.thread.files() %}
-            <li title="{{ a.name }}, from {{ from }}"><svg aria-hidden="true"><use href="#clip"/></svg><span class="name">{{ a.name }}</span><span class="size">{{ a.size }}</span></li>
-            {% endfor %}
-          </ul>
-        </section>
-        <section>
-          <h3>On your calendar</h3>
-          <ul class="linked">
-            {% for l in mail.thread.linked.iter() %}
-            <li class="{{ l.category.class() }}"><a href="/p/calendar"><span class="name">{{ l.title }}</span><span class="when">{{ l.when }}</span></a></li>
-            {% endfor %}
-          </ul>
-        </section>
-      </aside>
     </div>
   </article>
 </div>

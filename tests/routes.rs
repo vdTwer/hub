@@ -126,7 +126,7 @@ async fn mail_shows_every_feature() {
         "class=\"stack",
         "class=\"new-line",
         "<blockquote",
-        "class=\"context",
+        "files-pill",
         "On your calendar",
         "tag plain",
         "class=\"files",
