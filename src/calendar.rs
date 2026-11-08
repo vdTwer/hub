@@ -163,6 +163,8 @@ pub fn clock(minutes: u16) -> String {
 pub struct Placed {
     pub event: Event,
     pub depth: u16,
+    /// Minutes from its start until a later event lands on top of it.
+    pub visible: u16,
 }
 
 impl Placed {
@@ -181,10 +183,22 @@ impl Placed {
         format!("{}–{}", clock(self.event.start), clock(self.event.end))
     }
 
-    /// Too short for two lines of text; title and time share one.
+    /// Too little of it shows for two lines of text, because it is short or
+    /// a later event covers it early; title and time then share one line.
     #[must_use]
     pub const fn short(&self) -> bool {
-        self.event.end - self.event.start <= 45
+        self.visible <= 45
+    }
+
+    /// The full text, for a tooltip when the slip truncates it.
+    #[must_use]
+    pub fn tooltip(&self) -> String {
+        let place = if self.event.place.is_empty() {
+            String::new()
+        } else {
+            format!(", {}", self.event.place)
+        };
+        format!("{}, {}{place}", self.event.title, self.span())
     }
 }
 
@@ -194,19 +208,33 @@ impl Placed {
 pub fn place_day(events: &[Event]) -> Vec<Placed> {
     let mut sorted = events.to_vec();
     sorted.sort_by_key(|e| (e.start, std::cmp::Reverse(e.end)));
-    sorted
-        .iter()
-        .enumerate()
-        .fold(Vec::new(), |mut placed, (i, &event)| {
-            let depth = placed[..i]
-                .iter()
-                .filter(|p: &&Placed| p.event.end > event.start)
-                .map(|p| p.depth + 1)
-                .max()
-                .unwrap_or(0);
-            placed.push(Placed { event, depth });
-            placed
-        })
+    let mut placed =
+        sorted
+            .iter()
+            .enumerate()
+            .fold(Vec::new(), |mut placed: Vec<Placed>, (i, &event)| {
+                let depth = placed[..i]
+                    .iter()
+                    .filter(|p: &&Placed| p.event.end > event.start)
+                    .map(|p| p.depth + 1)
+                    .max()
+                    .unwrap_or(0);
+                placed.push(Placed {
+                    event,
+                    depth,
+                    visible: event.end - event.start,
+                });
+                placed
+            });
+    // Later events start no earlier, so the first one to start before an
+    // event ends is the one that covers it soonest.
+    let starts: Vec<u16> = placed.iter().map(|p| p.event.start).collect();
+    for (i, p) in placed.iter_mut().enumerate() {
+        if let Some(&cover) = starts[i + 1..].iter().find(|&&s| s < p.event.end) {
+            p.visible = cover - p.event.start;
+        }
+    }
+    placed
 }
 
 /// An all-day item with the lane (row) it sits in.
@@ -344,12 +372,25 @@ impl Week {
         clock(self.now)
     }
 
-    /// Hour labels for the gutter: `(label, top percent)`.
+    /// Hour labels for the gutter: `(label, top percent)`. An hour within a
+    /// quarter of an hour of now gives way to the time label for now.
     #[must_use]
     pub fn hours(&self) -> Vec<(String, f32)> {
         (DAY_START / 60..DAY_END / 60)
+            .filter(|h| (h * 60).abs_diff(self.now) >= 15)
             .map(|h| (format!("{h}:00"), percent(h * 60)))
             .collect()
+    }
+
+    /// Whether an event is over, so it can recede.
+    #[must_use]
+    pub const fn is_past(&self, event: &Event) -> bool {
+        event.day < self.today || (event.day == self.today && event.end <= self.now)
+    }
+
+    #[must_use]
+    pub const fn all_day_past(&self, item: &AllDay) -> bool {
+        item.last < self.today
     }
 
     #[must_use]
@@ -734,6 +775,33 @@ mod tests {
         let short = |start, end| place_day(&[ev(start, end)])[0].short();
         assert!(short(540, 585));
         assert!(!short(540, 600));
+    }
+
+    #[test]
+    fn an_event_covered_early_gets_a_one_line_header() {
+        let placed = place_day(&[ev(600, 660), ev(630, 720)]);
+        assert_eq!((placed[0].visible, placed[0].short()), (30, true));
+        assert_eq!((placed[1].visible, placed[1].short()), (90, false));
+    }
+
+    #[test]
+    fn hour_labels_make_room_for_now() {
+        let week = Week {
+            now: at(14, 10),
+            ..WEEK
+        };
+        let labels: Vec<String> = week.hours().into_iter().map(|(l, _)| l).collect();
+        assert!(!labels.contains(&"14:00".to_string()));
+        assert!(labels.contains(&"15:00".to_string()));
+    }
+
+    #[test]
+    fn events_before_now_are_past() {
+        let ev_at = |day, start, end| event(day, start, end, "", "", Category::Work);
+        assert!(WEEK.is_past(&ev_at(1, at(9, 0), at(10, 0))));
+        assert!(WEEK.is_past(&ev_at(2, at(9, 0), at(9, 30))));
+        assert!(!WEEK.is_past(&ev_at(2, at(13, 30), at(15, 0))));
+        assert!(!WEEK.is_past(&ev_at(3, at(9, 0), at(10, 0))));
     }
 
     #[test]
