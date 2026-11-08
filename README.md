@@ -78,18 +78,25 @@ Ready to try it? Jump to the [installation instructions](#installation).
 
 - It shares the calendar's paper: the same type, palette, squircles and slips, all from
   `static/paper.css`.
-- The list stays quiet. Weight and a dot mean unread, a small fill names the category, a count
-  follows a thread's sender, and a paperclip counts attachments.
-- A reply still owed is an outlined tag with a checkbox, the same shape as a todo in the
-  calendar.
+- There are no folders to file into, only the system mailboxes (Inbox, Snoozed, Drafts, Sent
+  and Archive). Mail is sorted with tags, which compose: a thread can carry Travel, Work and
+  Off-site at once, and a search can combine them. Category tags carry the calendar's hues,
+  and the rest are plain.
+- The list stays quiet. Weight and a dot mean unread, a count follows a thread's people, and
+  a paperclip counts attachments. A reply still owed is an outlined tag with a checkbox, the
+  same shape as a todo in the calendar.
 - Threads are grouped as Pinned, Today, Yesterday, Earlier this week and Earlier, and times
   shorten with age: 13:52, Yesterday, Mon, Nov 6.
 - The open thread is the one place with color. Its header is a still print of the grainy fluid
-  in the thread's hue, fading into the paper.
-- Older messages fold into one line each, the newest two are shown in full, and a draft
-  reply waits below them.
-- The layout is computed in Rust and covered by eleven unit tests. Like the calendar, it is a
-  mockup.
+  in the thread's hue, fading into the paper, with its tags and the days it spans.
+- The thread view folds what you have read and opens what is new. The first message and the
+  one just before the new ones stay as single lines for context, the rest fold into a stack of
+  slips, and a red line marks what arrived since you last looked.
+- Each new message shows whom it answers and a one-line quote of what it answers, so a reply
+  reads on its own.
+- A side panel gathers the thread: its people with their message counts, every file newest
+  first, and the plans it made, as links to the calendar.
+- The model is in Rust and covered by eighteen unit tests. Like the calendar, it is a mockup.
 
 ### The showcase
 
@@ -132,7 +139,7 @@ The server is written in Rust, the pieces in GLSL ES 3.0, and the runner in plai
 - [Tokio](https://tokio.rs) as the runtime
 
 Clippy runs with the `pedantic` and `nursery` groups, and `unwrap`, `expect` and `panic` are
-denied. Thirty-two tests cover the calendar and mailbox models and check that every piece has a page
+denied. Thirty-nine tests cover the calendar and mailbox models and check that every piece has a page
 and a valid shader, that card pieces render one canvas per card, that every palette holds valid
 hex colors, and that the calendar and the inbox show each of their features:
 
