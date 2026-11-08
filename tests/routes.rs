@@ -138,3 +138,24 @@ async fn mail_shows_every_feature() {
         assert!(body.contains(needle), "missing {needle}");
     }
 }
+
+#[tokio::test]
+async fn contacts_shows_every_feature() {
+    let (status, body) = get("/p/contacts").await;
+    assert_eq!(status, StatusCode::OK);
+    for needle in [
+        "class=\"group letter\">A<",
+        "person work open",
+        "<b>Lindqvist</b>",
+        "Favorites",
+        "class=\"details",
+        "class=\"threads",
+        "Off-site in Berlin",
+        "Quick sync with Ava",
+        "tag plain",
+        "data-still",
+        "data-palette=",
+    ] {
+        assert!(body.contains(needle), "missing {needle}");
+    }
+}

@@ -14,6 +14,7 @@ use axum::{
     routing::get,
 };
 use calendar::Week;
+use contacts::Book;
 use mail::{Mailbox, Part};
 use pieces::{Card, Layout, PIECES, Piece};
 use tower_http::services::ServeDir;
@@ -35,6 +36,13 @@ struct PiecePage {
 struct CardsPage {
     piece: &'static Piece,
     cards: &'static [Card],
+}
+
+#[derive(Template)]
+#[template(path = "contacts.html")]
+struct ContactsPage {
+    piece: &'static Piece,
+    book: &'static Book,
 }
 
 #[derive(Template)]
@@ -73,6 +81,7 @@ async fn piece(Path(slug): Path<String>) -> Response {
             Layout::Cards(cards) => render(&CardsPage { piece, cards }),
             Layout::Calendar(week) => render(&CalendarPage { piece, week }),
             Layout::Mail(mail) => render(&MailPage { piece, mail }),
+            Layout::Contacts(book) => render(&ContactsPage { piece, book }),
         },
     )
 }

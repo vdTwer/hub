@@ -2,6 +2,7 @@
 //! and dropping its fragment shader into `static/shaders/`.
 
 use crate::calendar::{WEEK, Week};
+use crate::contacts::{BOOK, Book};
 use crate::mail::{MAILBOX, Mailbox};
 
 /// One colorway for a card piece. The shader reads the colors in order as
@@ -33,6 +34,9 @@ pub enum Layout {
     /// An app mockup: a webmail inbox, with a still print of the shader
     /// in the open thread's hue.
     Mail(&'static Mailbox),
+    /// An app mockup: an address book, with a still print of the shader in
+    /// the open person's hue.
+    Contacts(&'static Book),
 }
 
 /// One showcase piece: a layout, a short caption and usually a shader.
@@ -97,6 +101,14 @@ pub const PIECES: &[Piece] = &[
                 and the open thread headed by a grainy print of its color.",
         shader: Some("fluid-grain.frag"),
         layout: Layout::Mail(&MAILBOX),
+    },
+    Piece {
+        slug: "contacts",
+        title: "People, on paper",
+        blurb: "An address book in the same language: A to Z, tags instead of groups, \
+                and a card that finds its threads and plans in the other apps.",
+        shader: Some("fluid-grain.frag"),
+        layout: Layout::Contacts(&BOOK),
     },
 ];
 

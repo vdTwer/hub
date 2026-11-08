@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% block title %}{{ piece.title }}{% endblock %}
+{% block body_class %}paper split-page contacts-page{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="/static/paper.css">
+<link rel="stylesheet" href="/static/split.css">
+<link rel="stylesheet" href="/static/contacts.css">
+<svg width="0" height="0" style="position: absolute" aria-hidden="true">
+  <symbol id="people" viewBox="0 0 20 20"><circle cx="7.5" cy="7" r="2.8"/><path d="M2.5 16c.6-2.8 2.6-4.3 5-4.3s4.4 1.5 5 4.3"/><circle cx="14" cy="7.8" r="2.2"/><path d="M14 11.8c1.7 0 3 1.1 3.5 3.2"/></symbol>
+  <symbol id="star" viewBox="0 0 20 20"><path d="m10 3 2.1 4.4 4.8.6-3.5 3.3.9 4.8L10 13.8l-4.3 2.3.9-4.8L3.1 8l4.8-.6z"/></symbol>
+  <symbol id="clock" viewBox="0 0 20 20"><circle cx="10" cy="10" r="6.8"/><path d="M10 6.2V10l2.6 1.6"/></symbol>
+  <symbol id="add-person" viewBox="0 0 20 20"><circle cx="8" cy="7" r="3"/><path d="M2.5 16.5c.6-3 2.8-4.6 5.5-4.6 1.2 0 2.3.3 3.2.9M15 11v6M12 14h6"/></symbol>
+  <symbol id="mail" viewBox="0 0 20 20"><path d="M3 5h14v10.5H3z"/><path d="m3.4 5.6 6.6 5.2 6.6-5.2"/></symbol>
+  <symbol id="phone" viewBox="0 0 20 20"><path d="M6.6 3.2 8.4 7l-1.7 1.3a9 9 0 0 0 5 5l1.3-1.7 3.8 1.8-.6 2.6a1.6 1.6 0 0 1-1.7 1.2A13.6 13.6 0 0 1 2.8 5.5a1.6 1.6 0 0 1 1.2-1.7z"/></symbol>
+  <symbol id="cal" viewBox="0 0 20 20"><path d="M3.5 5h13v11.5h-13zM3.5 8.5h13M7 3v3M13 3v3"/></symbol>
+  <symbol id="edit" viewBox="0 0 20 20"><path d="m13.6 3.4 3 3-9.1 9.1-3.8.8.8-3.8z"/><path d="m11.8 5.2 3 3"/></symbol>
+  <symbol id="search" viewBox="0 0 20 20"><circle cx="8.8" cy="8.8" r="5.3"/><path d="m12.7 12.7 4 4"/></symbol>
+  <symbol id="chev" viewBox="0 0 20 20"><path d="m8 5 5 5-5 5"/></symbol>
+</svg>
+<div class="split contacts-app">
+
+  <aside class="rail">
+    <nav aria-label="Contacts">
+      <h2 class="section">Contacts</h2>
+      <ul class="nav">
+        <li class="active" aria-current="page"><svg class="sym"><use href="#people"/></svg><span class="name">All Contacts</span><span class="n">{{ book.contacts.len() }}</span></li>
+        <li><svg class="sym"><use href="#star"/></svg><span class="name">Favorites</span><span class="n">{{ book.favorites() }}</span></li>
+        <li><svg class="sym"><use href="#clock"/></svg><span class="name">Recents</span></li>
+      </ul>
+      <h2 class="section">Tags</h2>
+      <ul class="nav tags">
+        {% for (t, n) in book.tags() %}
+        <li class="{{ t.class() }}"><i class="dot" aria-hidden="true"></i><span class="name">{{ t.name }}</span><span class="n">{{ n }}</span></li>
+        {% endfor %}
+      </ul>
+    </nav>
+  </aside>
+
+  <section class="list" aria-label="All contacts">
+    <header class="list-bar">
+      <div class="titles">
+        <h1>Contacts</h1>
+        <p>{{ book.contacts.len() }} people, {{ book.favorites() }} favorites</p>
+      </div>
+      <div class="toolbar-group">
+        <button type="button" class="icon-btn" title="New contact" aria-label="New contact"><svg class="sym"><use href="#add-person"/></svg></button>
+      </div>
+    </header>
+    <div class="list-tools">
+      <label class="search"><svg class="sym" aria-hidden="true"><use href="#search"/></svg><input type="search" placeholder="Search, or combine tags" aria-label="Search contacts"></label>
+    </div>
+    <div class="list-scroll">
+      {% for s in book.sections() %}
+      <h2 class="group letter">{{ s.letter }}</h2>
+      <ol class="rows">
+        {% for i in s.rows.iter().copied() %}{% let c = book.contact(i) %}
+        <li class="person {{ c.category.class() }}{% if book.is_open(i) %} open{% endif %}"{% if book.is_open(i) %} aria-current="true"{% endif %}>
+          <span class="mono mine" aria-hidden="true">{{ c.initials() }}</span>
+          <span class="who"><span class="name">{% if !c.given_names().is_empty() %}{{ c.given_names() }} {% endif %}<b>{{ c.last_name() }}</b></span><span class="role">{{ c.role }}</span></span>
+          {% if c.favorite %}<svg class="sym fav" aria-label="Favorite"><use href="#star"/></svg>{% endif %}
+        </li>
+        {% endfor %}
+      </ol>
+      {% endfor %}
+    </div>
+  </section>
+
+  {% let p = book.person() %}
+  <article class="contact-card {{ p.category.class() }}" aria-label="{{ p.name }}">
+    <header class="print-head">
+      <canvas class="print" aria-hidden="true" data-still
+              data-shader="{{ piece.shader_url() }}"
+              data-palette="{{ p.palette_attr() }}"
+              data-time-offset="64"></canvas>
+      <div class="print-bar">
+        <div class="glass toolbar-group">
+          <button type="button" class="icon-btn" title="Mail" aria-label="Mail"><svg class="sym"><use href="#mail"/></svg></button>
+          <button type="button" class="icon-btn" title="Call" aria-label="Call"><svg class="sym"><use href="#phone"/></svg></button>
+          <button type="button" class="icon-btn" title="Schedule" aria-label="Schedule"><svg class="sym"><use href="#cal"/></svg></button>
+        </div>
+        <div class="glass toolbar-group">
+          <button type="button" class="icon-btn{% if p.favorite %} on{% endif %}" title="Favorite" aria-label="Favorite" aria-pressed="{{ p.favorite }}"><svg class="sym"><use href="#star"/></svg></button>
+          <button type="button" class="icon-btn" title="Edit" aria-label="Edit"><svg class="sym"><use href="#edit"/></svg></button>
+        </div>
+      </div>
+      <div class="identity">
+        <span class="mono mine big" aria-hidden="true">{{ p.initials() }}</span>
+        <div>
+          <h2>{{ p.name }}</h2>
+          <p class="role">{{ p.role }}</p>
+          <p class="person-tags">
+            {% for t in p.tags.iter() %}<span class="tag {{ t.class() }}">{{ t.name }}</span>{% endfor %}
+            <button type="button" class="add-tag" aria-label="Add a tag">+</button>
+          </p>
+        </div>
+      </div>
+    </header>
+
+    <div class="card-body">
+      <div class="column">
+        <section class="group-box">
+          <h3>Details</h3>
+          <dl class="details">
+            {% for d in p.details.iter() %}
+            <div><dt>{{ d.label }}</dt><dd>{{ d.value }}</dd></div>
+            {% endfor %}
+          </dl>
+        </section>
+        {% if !p.note.is_empty() %}
+        <section class="group-box">
+          <h3>Note</h3>
+          <p class="note">{{ p.note }}</p>
+        </section>
+        {% endif %}
+      </div>
+
+      <div class="column">
+        <section class="group-box">
+          <h3>Threads</h3>
+          <ul class="threads">
+            {% for m in book.threads() %}
+            <li><a href="/p/mail"><span class="subject">{{ m.subject }}</span><span class="when">{{ book.mail.when(m.stamp) }}</span><span class="snippet">{{ m.snippet }}</span><svg class="sym chev" aria-hidden="true"><use href="#chev"/></svg></a></li>
+            {% endfor %}
+          </ul>
+        </section>
+        <section class="group-box">
+          <h3>Together this week</h3>
+          <ul class="together">
+            {% for t in book.together() %}
+            <li class="{{ t.event.category.class() }}{% if t.past %} past{% endif %}"><a href="/p/calendar"><span class="name">{{ t.event.title }}</span><span class="when">{{ t.when }}{% if !t.event.place.is_empty() %}, {{ t.event.place }}{% endif %}</span></a></li>
+            {% endfor %}
+          </ul>
+        </section>
+      </div>
+    </div>
+  </article>
+</div>
+<script src="/static/js/stage.js" defer></script>
+{% endblock %}
