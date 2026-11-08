@@ -40,9 +40,9 @@ impl Category {
     #[must_use]
     pub const fn palette(self) -> [&'static str; 5] {
         match self {
-            Self::Work => ["#f1f2fc", "#d5dbfb", "#9fb0ff", "#c9b8ff", "#b5d4ff"],
-            Self::Personal => ["#fbf6ea", "#fde9b8", "#ffc9a8", "#ffb59a", "#f6dca6"],
-            Self::Travel => ["#eef8f8", "#bfeceb", "#7fd6d6", "#b9cdfc", "#a6ecd9"],
+            Self::Work => ["#e3e6fb", "#a9b6ff", "#3d57e6", "#9b7bff", "#6cc2ff"],
+            Self::Personal => ["#fcefe0", "#ffcf9e", "#ff8a4c", "#ff6f7d", "#ffc04d"],
+            Self::Travel => ["#d9f1ee", "#8fdcd5", "#1fa7ad", "#6f8cff", "#3cc9a6"],
         }
     }
 }
@@ -730,14 +730,14 @@ pub const WEEK: Week = Week {
             last: 4,
             label: "traveling",
             swatch: "#0a8d9b",
-            palette: ["#eef8f8", "#bfeceb", "#7fd6d6", "#b9cdfc", "#a6ecd9"],
+            palette: Category::Travel.palette(),
         },
         Tint {
             first: 5,
             last: 6,
             label: "offline weekend",
             swatch: "#f0a800",
-            palette: ["#fbf6ea", "#fde9b8", "#ffd27a", "#ffc2a0", "#f6dca6"],
+            palette: ["#fdf3dc", "#ffd98a", "#f5a524", "#ff7a45", "#ffc65c"],
         },
     ],
 };

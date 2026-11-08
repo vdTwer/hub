@@ -72,7 +72,7 @@
 .hours .now-time { right: 6px; padding: 3px 5px; border-radius: 3px; color: #fff; background: var(--now); font-weight: 600; }
 .day-col { grid-row: 1; position: relative; border-left: 1px solid var(--hair); }
 /* a day that differs: a still print of grainy fluid color behind it */
-.body .tint { grid-row: 1; width: 100%; height: 100%; display: block; opacity: .8; pointer-events: none; }
+.body .tint { grid-row: 1; width: 100%; height: 100%; display: block; pointer-events: none; }
 
 /* events: overlapping ones cascade, later ones on top */
 .event {
