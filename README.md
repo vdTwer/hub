@@ -63,7 +63,11 @@ Ready to try it? Jump to the [installation instructions](#installation).
 - "Where am I now" is today's date in a red circle, a red now line, the time in the gutter and a
   ring around the current event.
 - The toolbar offers Day, 3 Days, Week, Multiweek and Month.
-- The layout is computed in Rust and covered by ten unit tests. It is a mockup: the controls
+- It is built to be used: the day headers and the hour gutter stay in view while the week
+  scrolls, the page opens scrolled to now (and to today on a phone), past events recede, an
+  event that a later one covers early gets a one-line header so its time stays visible, and
+  every truncated slip has the full text as a tooltip.
+- The layout is computed in Rust and covered by thirteen unit tests. It is a mockup: the controls
   look real but do nothing.
 
 ### The showcase
@@ -105,7 +109,7 @@ The server is written in Rust, the pieces in GLSL ES 3.0, and the runner in plai
 - [Tokio](https://tokio.rs) as the runtime
 
 Clippy runs with the `pedantic` and `nursery` groups, and `unwrap`, `expect` and `panic` are
-denied. Seventeen tests cover the calendar layout and check that every piece has a page and a valid
+denied. Twenty tests cover the calendar layout and check that every piece has a page and a valid
 shader, that card pieces render one canvas per card, that every palette holds valid hex colors,
 and that the calendar shows each of its features:
 
