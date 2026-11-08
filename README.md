@@ -10,7 +10,7 @@ water and prints them through a subtle analog treatment of grain, halation, gate
 flicker. Move the pointer across it, and the dye follows. The second piece, Colorways, pours
 the same fluid into six cards, each built around a different primary color. The third, A week,
 on paper, is a minimal, modern calendar mockup that washes its unusual days in still prints of
-the same grainy fluid.
+the same grainy fluid. The fourth, An inbox, on paper, carries that language into webmail.
 
 Ready to try it? Jump to the [installation instructions](#installation).
 
@@ -74,6 +74,23 @@ Ready to try it? Jump to the [installation instructions](#installation).
 - The layout is computed in Rust and covered by thirteen unit tests. It is a mockup: the controls
   look real but do nothing.
 
+### An inbox, on paper
+
+- It shares the calendar's paper: the same type, palette, squircles and slips, all from
+  `static/paper.css`.
+- The list stays quiet. Weight and a dot mean unread, a small fill names the category, a count
+  follows a thread's sender, and a paperclip counts attachments.
+- A reply still owed is an outlined tag with a checkbox, the same shape as a todo in the
+  calendar.
+- Threads are grouped as Pinned, Today, Yesterday, Earlier this week and Earlier, and times
+  shorten with age: 13:52, Yesterday, Mon, Nov 6.
+- The open thread is the one place with color. Its header is a still print of the grainy fluid
+  in the thread's hue, fading into the paper.
+- Older messages fold into one line each, the newest two are shown in full, and a draft
+  reply waits below them.
+- The layout is computed in Rust and covered by eleven unit tests. Like the calendar, it is a
+  mockup.
+
 ### The showcase
 
 - Pages are rendered on the server, and one small script runs any piece's shader in WebGL2.
@@ -115,9 +132,9 @@ The server is written in Rust, the pieces in GLSL ES 3.0, and the runner in plai
 - [Tokio](https://tokio.rs) as the runtime
 
 Clippy runs with the `pedantic` and `nursery` groups, and `unwrap`, `expect` and `panic` are
-denied. Twenty tests cover the calendar layout and check that every piece has a page and a valid
-shader, that card pieces render one canvas per card, that every palette holds valid hex colors,
-and that the calendar shows each of its features:
+denied. Thirty-two tests cover the calendar and mailbox models and check that every piece has a page
+and a valid shader, that card pieces render one canvas per card, that every palette holds valid
+hex colors, and that the calendar and the inbox show each of their features:
 
 ```sh
 cargo test
@@ -148,7 +165,7 @@ a checkout.
    `static/shaders/`.
 2. Add an entry with its slug, title, blurb and shader file name to `PIECES` in
    `src/pieces.rs`, with a `Layout`: `Fullscreen`, `Cards` with their palettes, or
-   `Calendar` with a week.
+   `Calendar` with a week, or `Mail` with a mailbox.
 3. Run `cargo test` and open `/p/<slug>`.
 
 ## License
