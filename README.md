@@ -94,8 +94,10 @@ Ready to try it? Jump to the [installation instructions](#installation).
   slips, and a red line marks what arrived since you last looked.
 - Each new message shows whom it answers and a one-line quote of what it answers, so a reply
   reads on its own.
-- A side panel gathers the thread: its people with their message counts, every file newest
-  first, and the plans it made, as links to the calendar.
+- The header gathers the thread, so the messages keep the full width: who wrote, how many
+  messages over which days, a count of its files, its tags, and the plans it made, as slips that
+  link to the calendar.
+- Attachments stay quiet: hairline chips under a rule at the foot of each message.
 - The model is in Rust and covered by eighteen unit tests. Like the calendar, it is a mockup.
 
 ### The showcase
