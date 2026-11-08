@@ -1,7 +1,8 @@
 /* A week, on paper. Every mark carries information: hue means category
    (work, personal, travel), a fluid wash means a day that differs from the
-   rest, and red means now. Shapes share one language: a 7px radius, a soft
-   tint of the category color, and a 3px accent on the leading edge. */
+   rest, and red means now. Shapes share one language: squircle corners, a
+   solid fill in the category color and a soft shadow. Todos are the one
+   outlined shape, because they mark a moment, not a block of time. */
 
 .calendar-page {
   --paper: #fcfbf7;
@@ -15,10 +16,12 @@
   --work: #3355e8;
   --personal: #c2307e;
   --travel: #0f8d9c;
-  --radius: 7px;
-  --hour: 58px;
-  --gutter: 60px;
-  --cols: var(--gutter) repeat(7, minmax(112px, 1fr));
+  --radius: 8px;
+  --hour: 66px;
+  --gutter: 64px;
+  --inset: 3px;
+  --room: 14px;
+  --cols: var(--gutter) repeat(7, minmax(136px, 1fr));
   color-scheme: light;
   background: var(--paper);
   color: var(--ink);
@@ -30,32 +33,26 @@
 .personal { --c: var(--personal); }
 .travel { --c: var(--travel); }
 
-.page { max-width: 1440px; margin: 0 auto; padding: 48px 32px 72px; }
+.page { padding: 40px 40px 56px; }
 button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
 
 /* header */
-.top { display: grid; grid-template-columns: 1fr auto; gap: 6px 32px; align-items: end; margin-bottom: 36px; }
-.back { grid-column: 1 / -1; font-size: 13px; font-weight: 500; color: var(--ink-3); margin-bottom: 6px; }
-.back::before { content: "← "; }
+.top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px 32px; margin-bottom: 40px; }
 .top h1 { font-size: clamp(28px, 3.2vw, 38px); font-weight: 650; line-height: 1.1; letter-spacing: -0.025em; }
-.now-text { grid-column: 1; color: var(--ink-2); font-size: 15px; }
-.now-text .now { display: inline-flex; align-items: center; gap: 6px; margin-right: 6px; color: var(--now); font-weight: 600; }
-.now-text .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--now); }
-.controls { grid-column: 2; grid-row: 2 / span 2; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .seg { display: inline-flex; padding: 3px; gap: 2px; border-radius: 10px; background: rgba(22, 22, 26, 0.05); }
 .seg button, .seg-solo { height: 28px; padding: 0 12px; border-radius: var(--radius); font-size: 13px; font-weight: 500; color: var(--ink-2); }
 .seg button:hover, .seg-solo:hover { color: var(--ink); }
 .seg button.active { color: var(--ink); background: var(--surface); box-shadow: 0 1px 2px rgba(0, 0, 0, .08), 0 0 0 .5px rgba(0, 0, 0, .06); }
 .seg-solo { height: 34px; border-radius: 10px; box-shadow: 0 0 0 1px var(--line) inset; }
 
-.layout { display: grid; grid-template-columns: minmax(0, 1fr) 248px; gap: 48px; }
 .scroller { overflow-x: auto; }
-.grid { min-width: 820px; }
+.grid { min-width: 1090px; }
 .row { display: grid; grid-template-columns: var(--cols); }
 
 /* day heads */
-.head-row { padding-bottom: 12px; }
-.day-head { display: grid; justify-items: start; gap: 4px; padding: 0 6px; }
+.head-row { padding-bottom: 16px; }
+.day-head { display: grid; justify-items: start; gap: 4px; padding: 0 var(--room) 0 var(--inset); }
 .day-top { display: flex; align-items: center; gap: 10px; min-width: 0; white-space: nowrap; }
 .day-head .name { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
 .day-head .date { font-size: 22px; font-weight: 600; letter-spacing: -0.02em; line-height: 32px; }
@@ -67,20 +64,19 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 /* the shared slip shape */
 .allday, .event, .someday li.is-event {
   border-radius: var(--radius);
-  background: color-mix(in srgb, var(--c) 12%, var(--surface));
-  box-shadow: inset 3px 0 0 var(--c);
-  color: color-mix(in srgb, var(--c) 55%, var(--ink));
+  background: var(--c);
+  color: #fff;
+  box-shadow: 0 1px 2px rgba(22, 22, 26, .1), 0 6px 14px -8px color-mix(in srgb, var(--c) 70%, transparent);
 }
 
 /* all day */
-.allday-row { grid-template-rows: repeat(var(--lanes), 26px); row-gap: 4px; padding-bottom: 12px; }
+.allday-row { grid-template-rows: repeat(var(--lanes), 28px); row-gap: 6px; padding-bottom: 16px; }
 .allday {
-  margin: 0 3px; padding: 0 10px 0 12px;
+  margin: 0 var(--room) 0 var(--inset); padding: 0 10px;
   display: flex; align-items: center;
   font-size: 12.5px; font-weight: 600;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.allday.multi-day { background: color-mix(in srgb, var(--c) 18%, var(--surface)); }
 
 /* time grid */
 .body {
@@ -100,29 +96,28 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 /* events: overlapping ones cascade, later ones on top */
 .event {
   position: absolute;
-  left: calc(3px + var(--depth) * 16px);
-  right: 3px;
-  padding: 5px 8px 0 11px;
+  left: calc(var(--inset) + var(--depth) * 18px);
+  right: var(--room);
+  padding: 6px 9px 0;
   overflow: hidden;
-  outline: 2px solid var(--paper);
   font-size: 12.5px; line-height: 1.3;
 }
 .event h3 { font-size: inherit; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.event p { font-size: 11.5px; color: color-mix(in srgb, var(--c) 30%, var(--ink-2)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.event.short { padding-top: 2px; }
-.event h3 span { margin-left: 4px; font-weight: 500; font-size: 11.5px; color: color-mix(in srgb, var(--c) 30%, var(--ink-2)); }
-.event.is-now { background: var(--c); color: #fff; box-shadow: none; }
-.event.is-now p { color: rgba(255, 255, 255, .8); }
+.event p { font-size: 11.5px; color: rgba(255, 255, 255, .8); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.event.short { padding-top: 3px; }
+.event h3 span { margin-left: 4px; font-weight: 500; font-size: 11.5px; color: rgba(255, 255, 255, .8); }
+.event { box-shadow: 0 0 0 1.5px var(--paper), 0 1px 2px rgba(22, 22, 26, .1), 0 6px 14px -8px color-mix(in srgb, var(--c) 70%, transparent); }
+.event.is-now { box-shadow: 0 0 0 2px var(--paper), 0 0 0 3.5px var(--c), 0 10px 24px -10px var(--c); }
 
 /* todos: a point in time, so an outlined capsule, never a filled block */
 .todo {
-  position: absolute; left: 3px; right: 3px; z-index: 2;
+  position: absolute; left: var(--inset); right: var(--room); z-index: 2;
   transform: translateY(-50%);
-  height: 26px; padding: 0 9px;
+  height: 28px; padding: 0 9px;
   display: flex; align-items: center; gap: 7px;
   border-radius: var(--radius);
   background: var(--surface);
-  box-shadow: inset 0 0 0 1px var(--line);
+  box-shadow: inset 0 0 0 1px var(--line), 0 1px 2px rgba(22, 22, 26, .06);
   font-size: 12.5px; font-weight: 500;
 }
 .todo .title { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -134,26 +129,37 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 .now-line { position: absolute; left: 0; right: 0; height: 2px; margin-top: -1px; background: var(--now); z-index: 3; }
 .now-line::before { content: ""; position: absolute; left: -5px; top: -4px; width: 10px; height: 10px; border-radius: 50%; background: var(--now); box-shadow: 0 0 0 2px var(--paper); }
 
-/* margin */
-.margin { padding-top: 4px; }
-.key { display: flex; gap: 16px; margin-bottom: 32px; font-size: 13px; font-weight: 500; }
-.key span { display: inline-flex; align-items: center; gap: 6px; color: var(--ink-2); }
-.key span::before { content: ""; width: 8px; height: 8px; border-radius: 2.5px; background: var(--c); }
-.someday h2 { font-size: 13px; font-weight: 600; margin-bottom: 12px; }
-.someday ul { list-style: none; padding: 0; display: grid; gap: 6px; }
+/* tray: undated items under the week, and the color key */
+.tray { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 24px 48px; margin-top: 36px; padding: 28px 0 0 var(--gutter); border-top: 1px solid var(--line); }
+.someday h2 { font-size: 13px; font-weight: 600; margin-bottom: 14px; }
+.someday ul { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 10px; }
 .someday li {
-  display: flex; align-items: center; gap: 8px;
-  min-height: 34px; padding: 6px 10px 6px 12px;
+  display: flex; align-items: center; gap: 10px;
+  min-height: 36px; padding: 0 14px 0 12px;
+  border-radius: var(--radius);
   font-size: 13px; font-weight: 500;
 }
-.someday li.is-todo { border-radius: var(--radius); background: var(--surface); box-shadow: inset 0 0 0 1px var(--line); padding-left: 10px; }
+.someday li.is-todo { background: var(--surface); box-shadow: inset 0 0 0 1px var(--line), 0 1px 2px rgba(22, 22, 26, .06); }
 .someday li .rule { display: none; }
-.someday .detail { margin-left: auto; padding-left: 8px; font-weight: 400; font-size: 12px; color: var(--ink-3); white-space: nowrap; }
-.someday li.is-event .detail { color: color-mix(in srgb, var(--c) 35%, var(--ink-3)); }
+.someday .detail { font-weight: 400; font-size: 12px; color: var(--ink-3); white-space: nowrap; }
+.someday li.is-event .detail { color: rgba(255, 255, 255, .8); }
+.key { display: flex; gap: 18px; padding-top: 32px; font-size: 13px; font-weight: 500; }
+.key span { display: inline-flex; align-items: center; gap: 7px; color: var(--ink-2); }
+.key span::before { content: ""; width: 10px; height: 10px; border-radius: 3px; background: var(--c); }
 
-@media (max-width: 1040px) {
-  .layout { grid-template-columns: minmax(0, 1fr); gap: 32px; }
-  .top { grid-template-columns: 1fr; }
-  .controls { grid-column: 1; grid-row: auto; margin-top: 14px; }
-  .page { padding: 32px 16px 56px; }
+/* Squircles: CSS Borders 4 corner-shape, in Chromium since 139. A squircle
+   needs a larger radius to look as soft as a circular arc; elsewhere the
+   corners stay round. */
+@supports (corner-shape: squircle) {
+  .calendar-page { --radius: 14px; }
+  .allday, .event, .todo, .someday li, .seg, .seg button, .seg-solo, .key span::before, .hours .now-time {
+    corner-shape: squircle;
+  }
+  .seg { border-radius: 16px; }
+  .seg-solo { border-radius: 16px; }
+}
+
+@media (max-width: 700px) {
+  .page { padding: 28px 16px 48px; }
+  .tray { padding-left: 0; }
 }
