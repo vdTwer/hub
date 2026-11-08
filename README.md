@@ -8,7 +8,9 @@ the look comes entirely from code, with no images, video or design files behind 
 The first piece, Fluid, on film, renders soft gradients that fold into each other like dye in
 water and prints them through a subtle analog treatment of grain, halation, gate weave and
 flicker. Move the pointer across it, and the dye follows. The second piece, Colorways, pours
-the same fluid into six cards, each built around a different primary color.
+the same fluid into six cards, each built around a different primary color. The third, A week,
+on paper, is a calendar mockup that puts crisp events on a grainy paper week and washes unusual
+days in the fluid.
 
 Ready to try it? Jump to the [installation instructions](#installation).
 
@@ -40,6 +42,21 @@ Ready to try it? Jump to the [installation instructions](#installation).
 - Each card starts at a different point in time, so no two show the same shapes, and each one
   can be stirred on its own.
 - Labels sit on frosted glass, and one Film button switches the treatment on every card at once.
+
+### A week, on paper
+
+- A week view with timed events, single-day and multi-day all-day items, and overlapping events
+  that share their width side by side.
+- Todos are points in time with a checkbox, never blocks, so they read differently from events
+  at a glance.
+- A "Sometime this week" shelf holds four items without a day, both events and todos.
+- Days that differ from the rest (traveling, an offline weekend) get a tinted fluid-on-film
+  background behind their columns, with a label and a key.
+- "Where am I now" shows up three ways: a live chip with the current and next event, a red now
+  line across the week, and a highlighted current event.
+- The layout is computed in Rust: overlap clusters get side-by-side columns, all-day items stack
+  into as few lanes as possible, and nine unit tests cover the edge cases.
+- It is a mockup: the buttons look real but do nothing.
 
 ### The showcase
 
@@ -80,8 +97,9 @@ The server is written in Rust, the pieces in GLSL ES 3.0, and the runner in plai
 - [Tokio](https://tokio.rs) as the runtime
 
 Clippy runs with the `pedantic` and `nursery` groups, and `unwrap`, `expect` and `panic` are
-denied. Six tests check that every piece has a page and a valid shader, that card pieces render one
-canvas per card, and that every palette holds valid hex colors:
+denied. Sixteen tests cover the calendar layout and check that every piece has a page and a valid
+shader, that card pieces render one canvas per card, that every palette holds valid hex colors,
+and that the calendar shows each of its features:
 
 ```sh
 cargo test
@@ -111,8 +129,8 @@ a checkout.
 1. Write a fragment shader that starts with `#version 300 es` and save it in
    `static/shaders/`.
 2. Add an entry with its slug, title, blurb and shader file name to `PIECES` in
-   `src/pieces.rs`. Leave `cards` empty for a full-screen piece, or list cards with their
-   palettes to get a card grid.
+   `src/pieces.rs`, with a `Layout`: `Fullscreen`, `Cards` with their palettes, or
+   `Calendar` with a week.
 3. Run `cargo test` and open `/p/<slug>`.
 
 ## License
