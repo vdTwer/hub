@@ -46,11 +46,12 @@
         </div>
 
         <div class="row body">
-          {% for t in week.tints.iter() %}
+          {% for p in week.prints() %}
           <canvas class="tint" aria-hidden="true" data-still
-                  style="grid-column: {{ t.grid_start() }} / {{ t.grid_end() }}"
+                  style="grid-column: {{ p.grid_start() }} / {{ p.grid_end() }}"
                   data-shader="{{ piece.shader_url() }}"
-                  data-palette="{{ t.palette_attr() }}"
+                  data-palette="{{ p.palette_attr() }}"{% if p.next.is_some() %}
+                  data-palette-next="{{ p.next_palette_attr() }}" data-seam="{{ p.seam_attr() }}" data-blend="28"{% endif %}
                   data-time-offset="{{ 9 + loop.index0 * 23 }}"></canvas>
           {% endfor %}
 

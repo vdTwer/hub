@@ -49,6 +49,8 @@ Ready to try it? Jump to the [installation instructions](#installation).
   work, apricot for personal and lagoon for travel, taken from the fluid's palette and deep
   enough that text on every fill passes 7:1. A still print of the grainy fluid marks days that
   differ from the rest, and red marks now.
+- Tinted runs that touch, such as the trip and the weekend after it, share one print: the fluid
+  runs on unbroken and only its colors cross-fade over a 28-pixel seam.
 - Type is Source Sans 3, a humanist sans with open, calligraphic forms. Its figures are
   tabular by default, so times line up without a mono face. It is vendored under the OFL, with
   no font CDN.
